@@ -12,7 +12,7 @@ INSERT INTO Class (Name, Department) VALUES
     ('Microeconomics', 'Economics'),
     ('Introduction to Sociology', 'Sociology'),
     ('Business Ethics', 'Business'),
-    ('Environmental Science', 'Environmental Science'),
+    ('Introduction to Biology', 'Biology'),
     ('Introduction to Music', 'Music'),
     ('Physical Education', 'Physical Education');
 
