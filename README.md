@@ -1,1 +1,11 @@
-# CPSC-449-Project1
+# CPSC-449 Project 1
+
+## Group Members
+
+- Edwin Peraza
+-
+-
+-
+-
+
+## Project Description
