@@ -5,7 +5,7 @@ BEGIN TRANSACTION;
 
 -- Create the Class table
 DROP TABLE IF EXISTS Class;
-CREATE TABLE IF NOW EXISTS Class (
+CREATE TABLE IF NOT EXISTS Class (
     CourseCode INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Department TEXT NOT NULL
@@ -66,22 +66,22 @@ INSERT INTO Class (Name, Department) VALUES
     ('Physical Education', 'Physical Education');
 
 -- Users Table
-INSERT INTO Users (Name, Middle, LastName) VALUES
-    ('John', 'A.', 'Smith'),
-    ('Jane', 'M.', 'Doe'),
-    ('Robert', 'E.', 'Johnson'),
-    ('Emily', NULL, 'Davis'),
-    ('Michael', 'J.', 'Wilson'),
-    ('Susan', 'K.', 'Brown'),
-    ('David', 'P.', 'Miller'),
-    ('Jennifer', NULL, 'Clark'),
-    ('Richard', 'R.', 'White'),
-    ('Sarah', 'L.', 'Anderson'),
-    ('William', 'T.', 'Lee'),
-    ('Karen', NULL, 'Martinez'),
-    ('Thomas', 'S.', 'Taylor'),
-    ('Laura', 'M.', 'Garcia'),
-    ('Steven', NULL, 'Harris');
+INSERT INTO Users (Name, Middle, LastName, Role) VALUES
+    ('John', 'A.', 'Smith', 'instructor'),
+    ('Jane', 'M.', 'Doe' ,'instructor'),
+    ('Robert', 'E.', 'Johnson', 'instructor'),
+    ('Emily', NULL, 'Davis' ,'registrar'),
+    ('Michael', 'J.', 'Wilson', 'student'),
+    ('Susan', 'K.', 'Brown', 'student'),
+    ('David', 'P.', 'Miller', 'student'),
+    ('Jennifer', NULL, 'Clark', 'student'),
+    ('Richard', 'R.', 'White', 'student'),
+    ('Sarah', 'L.', 'Anderson', 'student'),
+    ('William', 'T.', 'Lee', 'student'),
+    ('Karen', NULL, 'Martinez', 'student'),
+    ('Thomas', 'S.', 'Taylor', 'student'),
+    ('Laura', 'M.', 'Garcia', 'student'),
+    ('Steven', NULL, 'Harris', 'student');
 
 -- Section Table
 INSERT INTO Section (CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
