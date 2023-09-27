@@ -1,11 +1,18 @@
+-- classes.sql
+
+PRAGMA foreign_keys=ON;
+BEGIN TRANSACTION;
+
 -- Create the Class table
-CREATE TABLE IF NOT EXISTS Class (
+DROP TABLE IF EXISTS Class;
+CREATE TABLE IF NOW EXISTS Class (
     CourseCode INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Department TEXT NOT NULL
 );
 
 -- Create the Section table
+DROP TABLE IF EXISTS Section;
 CREATE TABLE IF NOT EXISTS Section (
     SectionNumber INTEGER PRIMARY KEY AUTOINCREMENT,
     CourseCode INTEGER NOT NULL,
@@ -14,33 +21,28 @@ CREATE TABLE IF NOT EXISTS Section (
     MaxEnrollment INTEGER NOT NULL,
     Waitlist INTEGER NOT NULL,
     FOREIGN KEY (CourseCode) REFERENCES Class (CourseCode),
-    FOREIGN KEY (InstructorID) REFERENCES Instructor (CWID)
+    FOREIGN KEY (InstructorID) REFERENCES Users (CWID)
 );
 
--- Create the Instructor table
-CREATE TABLE IF NOT EXISTS Instructor (
+-- Create the Users table
+DROP TABLE IF EXISTS Users;
+CREATE TABLE IF NOT EXISTS Users (
     CWID INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Middle TEXT NULL,
-    LastName TEXT NOT NULL
-);
-
--- Create the Student table
-CREATE TABLE IF NOT EXISTS Student (
-    CWID INTEGER PRIMARY KEY AUTOINCREMENT,
-    Name TEXT NOT NULL,
-    Middle TEXT NULL,
-    LastName TEXT NOT NULL
+    LastName TEXT NOT NULL,
+    Role TEXT NOT NULL CHECK (role IN ('instructor', 'registrar', 'student'))
 );
 
 -- Create the RegistrationList table
+DROP TABLE IF EXISTS RegistrationList;
 CREATE TABLE IF NOT EXISTS RegistrationList (
     RecordID INTEGER PRIMARY KEY AUTOINCREMENT,
     StudentID INTEGER NOT NULL,
     ClassID INTEGER NOT NULL,
     EnrollmentDate DATETIME DEFAULT (CURRENT_TIMESTAMP),
     Status TEXT NOT NULL CHECK (Status IN ('enrolled', 'waitlisted', 'dropped')),
-    FOREIGN KEY (StudentID) REFERENCES Student (CWID),
+    FOREIGN KEY (StudentID) REFERENCES Users (CWID),
     FOREIGN KEY (ClassID) REFERENCES Section (SectionNumber)
 );
 
@@ -63,8 +65,8 @@ INSERT INTO Class (Name, Department) VALUES
     ('Introduction to Music', 'Music'),
     ('Physical Education', 'Physical Education');
 
--- Instructor Table
-INSERT INTO Instructor (Name, Middle, LastName) VALUES
+-- Users Table
+INSERT INTO Users (Name, Middle, LastName) VALUES
     ('John', 'A.', 'Smith'),
     ('Jane', 'M.', 'Doe'),
     ('Robert', 'E.', 'Johnson'),
@@ -80,24 +82,6 @@ INSERT INTO Instructor (Name, Middle, LastName) VALUES
     ('Thomas', 'S.', 'Taylor'),
     ('Laura', 'M.', 'Garcia'),
     ('Steven', NULL, 'Harris');
-
--- Student Table
-INSERT INTO Student (Name, Middle, LastName) VALUES
-    ('Alice', 'M.', 'Johnson'),
-    ('Bob', 'A.', 'Smith'),
-    ('Charlie', 'B.', 'Davis'),
-    ('David', NULL, 'Wilson'),
-    ('Ella', 'J.', 'Brown'),
-    ('Frank', 'L.', 'Miller'),
-    ('Grace', 'P.', 'Clark'),
-    ('Hannah', 'S.', 'White'),
-    ('Ian', NULL, 'Anderson'),
-    ('Jessica', 'T.', 'Lee'),
-    ('Kevin', NULL, 'Martinez'),
-    ('Lily', 'S.', 'Taylor'),
-    ('Mark', 'M.', 'Garcia'),
-    ('Nora', NULL, 'Harris'),
-    ('Oliver', 'R.', 'Anderson');
 
 -- Section Table
 INSERT INTO Section (CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
@@ -134,3 +118,5 @@ INSERT INTO RegistrationList (StudentID, ClassID, Status) VALUES
     (13, 12, 'enrolled'),
     (14, 13, 'enrolled'),
     (15, 14, 'enrolled');
+    
+COMMIT;
