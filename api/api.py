@@ -31,13 +31,13 @@ class ListClasses(BaseModel):
 class AttemptEnrollment(BaseModel):
     course_code: int
     section_code: int
-    CWID: int
+    cwid: int
     status: str
 
 class DropClass(BaseModel):
     course_code: int
     section: int
-    CWID: int
+    cwid: int
     status: str
 
 # for instructors: 
@@ -60,7 +60,7 @@ class DropStudent(BaseModel):
     section: int
     current_enrollment: int
     # student CWID 
-    CWID: int
+    cwid: int
     status: str
 
 # for registrar:
@@ -87,3 +87,14 @@ waitlistMax = 15
 
 # endpoint to to get list of classes
 # @app.get("/classes/")
+
+# endpoint to attempt enrollment
+# @app.post("/enrollment/")
+
+# endpoint to drop a class
+# endpoint to view enrollment
+# endpoint to view dropped
+# endpoint to drop student
+# endpoint to add class
+# endpoint to add section
+# endpoint to change instructor
