@@ -58,6 +58,45 @@
 					}
 				}
 			}
+		},
+		"/enrollment": {
+			"post": {
+				"summary": "Course Enrollment",
+				"description": "Allow enrollment of a course under given section for a student\n\nArgs:\n    enrollment_request (EnrollmentRequest): EnrollmentRequest model\n\nRaises:\n    HTTPException: Raise HTTP exception when role is not authrorized\n    HTTPException: Raise HTTP exception when query fail to execute in database\n\nReturns:\n    EnrollmentResponse: EnrollmentResponse model",
+				"operationId": "course_enrollment",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/EnrollmentRequest"
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "Successful Response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EnrollmentResponse"
+								}
+							}
+						}
+					},
+					"422": {
+						"description": "Validation Error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/HTTPValidationError"
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	},
 	"components": {
@@ -118,6 +157,45 @@
 				"type": "object",
 				"required": ["available_classes"],
 				"title": "AvailableClassResponse"
+			},
+			"EnrollmentRequest": {
+				"properties": {
+					"section_id": {
+						"type": "integer",
+						"title": "Section Id"
+					},
+					"course_code": {
+						"type": "integer",
+						"title": "Course Code"
+					},
+					"student_id": {
+						"type": "integer",
+						"title": "Student Id"
+					}
+				},
+				"type": "object",
+				"required": ["section_id", "course_code", "student_id"],
+				"title": "EnrollmentRequest"
+			},
+			"EnrollmentResponse": {
+				"properties": {
+					"enrollment_status": {
+						"type": "string",
+						"title": "Enrollment Status"
+					},
+					"enrollment_date": {
+						"anyOf": [{
+							"type": "string",
+							"format": "date-time"
+						}, {
+							"type": "null"
+						}],
+						"title": "Enrollment Date"
+					}
+				},
+				"type": "object",
+				"required": ["enrollment_status"],
+				"title": "EnrollmentResponse"
 			},
 			"HTTPValidationError": {
 				"properties": {
