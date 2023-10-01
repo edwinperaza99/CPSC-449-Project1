@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS Users (
 -- Create the Class table
 DROP TABLE IF EXISTS Class;
 CREATE TABLE IF NOT EXISTS Class (
-    CourseCode INTEGER PRIMARY KEY,
+    CourseCode TEXT PRIMARY KEY,
     Name TEXT NOT NULL,
     Department TEXT NOT NULL
 );
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS Class (
 DROP TABLE IF EXISTS Section;
 CREATE TABLE IF NOT EXISTS Section (
     SectionNumber INTEGER NOT NULL,
-    CourseCode INTEGER NOT NULL,
+    CourseCode TEXT NOT NULL,
     InstructorID INTEGER NOT NULL,
     CurrentEnrollment INTEGER NOT NULL,
     MaxEnrollment INTEGER NOT NULL,
@@ -41,7 +41,7 @@ DROP TABLE IF EXISTS RegistrationList;
 CREATE TABLE IF NOT EXISTS RegistrationList (
     RecordID INTEGER PRIMARY KEY AUTOINCREMENT,
     StudentID INTEGER NOT NULL,
-    CourseCode INTEGER NOT NULL,
+    CourseCode TEXT NOT NULL,
     SectionNumber INTEGER NOT NULL,
     EnrollmentDate DATETIME DEFAULT (CURRENT_TIMESTAMP),
     Status TEXT NOT NULL CHECK (Status IN ('enrolled', 'waitlisted', 'dropped')),
@@ -52,16 +52,16 @@ CREATE TABLE IF NOT EXISTS RegistrationList (
 -- pre populate database
 -- Class Table
 INSERT INTO Class (CourseCode, Name, Department) VALUES
-    (101, 'Introduction to Programming', 'CPSC'),
-    (111, 'Data Structures and Algorithms', 'CPSC'),
-    (201, 'Calculus I', 'MATH'),
-    (301, 'Physics for Engineers', 'PHYS'),
-    (101, 'Introduction to Psychology', 'PYS'),
-    (541, 'English Composition', 'ENG'),
-    (271, 'Art History', 'ART'),
-    (101, 'Introduction to Chemistry', 'CHEM'),
-    (281, 'World History', 'HIST'),
-    (554, 'Microeconomics', 'ECON');
+    ('CPSC-101', 'Introduction to Programming', 'Computer Science'),
+    ('CPSC-111', 'Data Structures and Algorithms', 'Computer Science'),
+    ('MATH-201', 'Calculus I', 'Mathematics'),
+    ('PHYS-301', 'Physics for Engineers', 'Physics'),
+    ('PYS-101', 'Introduction to Psychology', 'Psychology'),
+    ('ENG-541', 'English Composition', 'English'),
+    ('ART-271', 'Art History', 'Art'),
+    ('CHEM-101', 'Introduction to Chemistry', 'Chemistry'),
+    ('HIST-281', 'World History', 'History'),
+    ('ECON-554', 'Microeconomics', 'Economy');
 
 
 -- Users Table
@@ -84,29 +84,24 @@ INSERT INTO Users (Name, Middle, LastName, Role) VALUES
 
 -- Section Table
 INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
-    (1, 101, 1, 25, 30, 5),
-    (5, 101, 2, 22, 30, 8),
-    (1, 111, 3, 28, 35, 7),
-    (5, 111, 4, 20, 25, 5),
-    (1, 201, 5, 18, 20, 2),
-    (3, 201, 6, 32, 35, 3),
+    (1, 'CPSC-101', 1, 1, 30, 1),
+    (5, 'CPSC-101', 1, 1, 30, 0),
+    (1, 'CPSC-111', 2, 0, 35, 0),
+    (5, 'MATH-201', 3, 2, 25, 0),
+    (1, 'PHYS-301', 3, 1, 20, 0),
+    (3, 'PYS-101', 4, 2, 35, 0);
 
 -- RegistrationList Table
 INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALUES
-    (5, 1, 'enrolled'),
-    (5, 1, 'dropped'),
-    (5, 2, 'waitlisted'),
-    (6, 3, 'enrolled'),
-    (6, 4, 'enrolled'),
-    (7, 5, 'enrolled'),
-    (7, 6, 'enrolled'),
-    (8, 7, 'enrolled'),
-    (9, 8, 'enrolled'),
-    (10, 9, 'enrolled'),
-    (11, 10, 'enrolled'),
-    (12, 11, 'enrolled'),
-    (13, 12, 'enrolled'),
-    (14, 13, 'enrolled'),
-    (15, 14, 'enrolled');
+    (5,'MATH-201', 5, 'enrolled'),
+    (5, 'PHYS-301',1, 'dropped'),
+    (5, 'CPSC-101', 1, 'waitlisted'),
+    (6, 'PYS-101', 3, 'enrolled'),
+    (6, 'CPSC-101', 5, 'enrolled'),
+    (7, 'MATH-201', 5, 'enrolled'),
+    (7, 'PYS-101', 3, 'enrolled'),
+    (8, 'PHYS-301', 1, 'enrolled'),
+    (9, 'CPSC-101', 1, 'enrolled');
+
     
 COMMIT;
