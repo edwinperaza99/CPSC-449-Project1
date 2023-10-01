@@ -83,7 +83,7 @@ INSERT INTO Users (Name, Middle, LastName, Role) VALUES
     ('Steven', NULL, 'Harris', 'student');
 
 -- Section Table
-INSERT INTO Section (CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
+INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
     (1, 101, 1, 25, 30, 5),
     (5, 101, 2, 22, 30, 8),
     (1, 111, 3, 28, 35, 7),
