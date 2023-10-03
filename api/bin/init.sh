@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sqlite3 ./var/classes.db < ./share/clases.sql
+sqlite3 ./share/classes.db < ./share/clases.sql
