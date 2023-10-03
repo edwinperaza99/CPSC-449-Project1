@@ -3,27 +3,6 @@
 PRAGMA foreign_keys=ON;
 BEGIN TRANSACTION;
 
--- Create the Class table
-DROP TABLE IF EXISTS Class;
-CREATE TABLE IF NOT EXISTS Class (
-    CourseCode INTEGER PRIMARY KEY AUTOINCREMENT,
-    Name TEXT NOT NULL,
-    Department TEXT NOT NULL
-);
-
--- Create the Section table
-DROP TABLE IF EXISTS Section;
-CREATE TABLE IF NOT EXISTS Section (
-    SectionNumber INTEGER PRIMARY KEY AUTOINCREMENT,
-    CourseCode INTEGER NOT NULL,
-    InstructorID INTEGER NOT NULL,
-    CurrentEnrollment INTEGER NOT NULL,
-    MaxEnrollment INTEGER NOT NULL,
-    Waitlist INTEGER NOT NULL,
-    FOREIGN KEY (CourseCode) REFERENCES Class (CourseCode),
-    FOREIGN KEY (InstructorID) REFERENCES Users (CWID)
-);
-
 -- Create the Users table
 DROP TABLE IF EXISTS Users;
 CREATE TABLE IF NOT EXISTS Users (
@@ -34,36 +13,56 @@ CREATE TABLE IF NOT EXISTS Users (
     Role TEXT NOT NULL CHECK (role IN ('instructor', 'registrar', 'student'))
 );
 
+-- Create the Class table
+DROP TABLE IF EXISTS Class;
+CREATE TABLE IF NOT EXISTS Class (
+    CourseCode TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    Department TEXT NOT NULL
+);
+
+-- Create the Section table
+DROP TABLE IF EXISTS Section;
+CREATE TABLE IF NOT EXISTS Section (
+    SectionNumber INTEGER NOT NULL,
+    CourseCode TEXT NOT NULL,
+    InstructorID INTEGER NOT NULL,
+    CurrentEnrollment INTEGER NOT NULL,
+    MaxEnrollment INTEGER NOT NULL,
+    Waitlist INTEGER NOT NULL,
+    PRIMARY KEY (SectionNumber, CourseCode),
+    FOREIGN KEY (CourseCode) REFERENCES Class (CourseCode),
+    FOREIGN KEY (InstructorID) REFERENCES Users (CWID)
+);
+
+
 -- Create the RegistrationList table
 DROP TABLE IF EXISTS RegistrationList;
 CREATE TABLE IF NOT EXISTS RegistrationList (
     RecordID INTEGER PRIMARY KEY AUTOINCREMENT,
     StudentID INTEGER NOT NULL,
-    ClassID INTEGER NOT NULL,
+    CourseCode TEXT NOT NULL,
+    SectionNumber INTEGER NOT NULL,
     EnrollmentDate DATETIME DEFAULT (CURRENT_TIMESTAMP),
     Status TEXT NOT NULL CHECK (Status IN ('enrolled', 'waitlisted', 'dropped')),
     FOREIGN KEY (StudentID) REFERENCES Users (CWID),
-    FOREIGN KEY (ClassID) REFERENCES Section (SectionNumber)
+    FOREIGN KEY (CourseCode, SectionNumber) REFERENCES Section (CourseCode, SectionNumber)
 );
 
 -- pre populate database
 -- Class Table
-INSERT INTO Class (Name, Department) VALUES
-    ('Introduction to Programming', 'Computer Science'),
-    ('Data Structures and Algorithms', 'Computer Science'),
-    ('Calculus I', 'Mathematics'),
-    ('Physics for Engineers', 'Physics'),
-    ('Introduction to Psychology', 'Psychology'),
-    ('English Composition', 'English'),
-    ('Art History', 'Art'),
-    ('Introduction to Chemistry', 'Chemistry'),
-    ('World History', 'History'),
-    ('Microeconomics', 'Economics'),
-    ('Introduction to Sociology', 'Sociology'),
-    ('Business Ethics', 'Business'),
-    ('Introduction to Biology', 'Biology'),
-    ('Introduction to Music', 'Music'),
-    ('Physical Education', 'Physical Education');
+INSERT INTO Class (CourseCode, Name, Department) VALUES
+    ('CPSC-101', 'Introduction to Programming', 'Computer Science'),
+    ('CPSC-111', 'Data Structures and Algorithms', 'Computer Science'),
+    ('MATH-201', 'Calculus I', 'Mathematics'),
+    ('PHYS-301', 'Physics for Engineers', 'Physics'),
+    ('PYS-101', 'Introduction to Psychology', 'Psychology'),
+    ('ENG-541', 'English Composition', 'English'),
+    ('ART-271', 'Art History', 'Art'),
+    ('CHEM-101', 'Introduction to Chemistry', 'Chemistry'),
+    ('HIST-281', 'World History', 'History'),
+    ('ECON-554', 'Microeconomics', 'Economy');
+
 
 -- Users Table
 INSERT INTO Users (Name, Middle, LastName, Role) VALUES
@@ -84,39 +83,25 @@ INSERT INTO Users (Name, Middle, LastName, Role) VALUES
     ('Steven', NULL, 'Harris', 'student');
 
 -- Section Table
-INSERT INTO Section (CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
-    (1, 1, 25, 30, 5),
-    (1, 2, 22, 30, 8),
-    (2, 3, 28, 35, 7),
-    (3, 4, 20, 25, 5),
-    (4, 5, 18, 20, 2),
-    (5, 6, 32, 35, 3),
-    (6, 7, 28, 30, 2),
-    (7, 8, 20, 25, 5),
-    (8, 9, 22, 30, 8),
-    (9, 10, 30, 35, 5),
-    (10, 11, 25, 30, 5),
-    (11, 12, 26, 30, 4),
-    (12, 13, 20, 25, 5),
-    (13, 14, 22, 30, 8),
-    (14, 15, 30, 35, 5);
+INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
+    (1, 'CPSC-101', 1, 1, 30, 1),
+    (5, 'CPSC-101', 1, 1, 30, 0),
+    (1, 'CPSC-111', 2, 0, 35, 0),
+    (5, 'MATH-201', 3, 2, 25, 0),
+    (1, 'PHYS-301', 3, 1, 20, 0),
+    (3, 'PYS-101', 4, 2, 35, 0);
 
 -- RegistrationList Table
-INSERT INTO RegistrationList (StudentID, ClassID, Status) VALUES
-    (1, 1, 'enrolled'),
-    (2, 1, 'enrolled'),
-    (3, 2, 'enrolled'),
-    (4, 3, 'enrolled'),
-    (5, 4, 'enrolled'),
-    (6, 5, 'enrolled'),
-    (7, 6, 'enrolled'),
-    (8, 7, 'enrolled'),
-    (9, 8, 'enrolled'),
-    (10, 9, 'enrolled'),
-    (11, 10, 'enrolled'),
-    (12, 11, 'enrolled'),
-    (13, 12, 'enrolled'),
-    (14, 13, 'enrolled'),
-    (15, 14, 'enrolled');
+INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALUES
+    (5,'MATH-201', 5, 'enrolled'),
+    (5, 'PHYS-301',1, 'dropped'),
+    (5, 'CPSC-101', 1, 'waitlisted'),
+    (6, 'PYS-101', 3, 'enrolled'),
+    (6, 'CPSC-101', 5, 'enrolled'),
+    (7, 'MATH-201', 5, 'enrolled'),
+    (7, 'PYS-101', 3, 'enrolled'),
+    (8, 'PHYS-301', 1, 'enrolled'),
+    (9, 'CPSC-101', 1, 'enrolled');
+
     
 COMMIT;
