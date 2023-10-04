@@ -1,21 +1,21 @@
 """Main module to run server and serve endpoints for clients."""
 
 from asyncio import run
+from datetime import datetime
+import sqlite3
 
-import databases
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 from loguru import logger
-from datetime import datetime
 import uvicorn
 from uvicorn.server import Server
 
 from .database_query import (
+    DBException,
     check_enrollment_eligibility,
     check_user_role,
-    get_available_classes,
     complete_registration,
-    DBException
+    get_available_classes,
 )
 from .models import (
     AvailableClassResponse,
@@ -28,26 +28,21 @@ from .models import (
 )
 
 app = FastAPI()
-DATABASE_URL = "sqlite+aiosqlite:///./api/share/classes.db"
-database = databases.Database(DATABASE_URL)
-
-
-@app.on_event("startup")
-async def startup():
-    await database.connect()
+DATABASE_URL = "./api/share/classes.db"
+db_connection = sqlite3.connect(DATABASE_URL)
+db_connection.isolation_level = None
 
 
 @app.on_event("shutdown")
 async def shutdown():
-    await database.disconnect()
+    db_connection.close()
 
 @app.get(path='/db_liveness', operation_id='check_db_health')
 async def check_db_health():
-    is_connected = database.is_connected
-    logger.info(f'Database status:{is_connected}')
-    if is_connected:        
+    try:
+        db_connection.cursor()
         return JSONResponse(content= {'status': 'ok'}, status_code = status.HTTP_200_OK)
-    else:
+    except Exception as ex:
         return JSONResponse(content= {'status': 'not connected'}, status_code = status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
@@ -61,7 +56,8 @@ async def available_classes(department_name: str):
     Returns:
         AvailableClassResponse: AvailableClassResponse model
     """
-    result = await get_available_classes(db=database, department_name=department_name)
+    result = get_available_classes(db_connection=db_connection, department_name=department_name)
+    logger.info('Succesffuly exexuted available')
     return AvailableClassResponse(available_classes = result)
 
 @app.post(path ="/enrollment", operation_id="course_enrollment", response_model= EnrollmentResponse)
@@ -79,24 +75,23 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
         EnrollmentResponse: EnrollmentResponse model
     """
     
-    role = await check_user_role(database, enrollment_request.student_id)
+    role = check_user_role(db_connection, enrollment_request.student_id)
     if role == UserRole.NOT_FOUND or role != UserRole.STUDENT:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Enrollment not authorized for role:{role}')
     
-    eligibility_status = await check_enrollment_eligibility(database, enrollment_request.section_id, enrollment_request.course_code)
+    eligibility_status = check_enrollment_eligibility(db_connection, enrollment_request.section_id, enrollment_request.course_code)
     if eligibility_status == RegistrationStatus.NOT_ELIGIBLE:
         return EnrollmentResponse(enrollment_status = 'not eligible')
 
     try:
-        registration = Registration(student_id = enrollment_request.student_id, enrollment_status = eligibility_status, class_id = enrollment_request.course_code) 
-        insert_status = await complete_registration(database,registration,enrollment_request.student_id, enrollment_request.course_code)
+        registration = Registration(student_id = enrollment_request.student_id, enrollment_status = eligibility_status, class_id = enrollment_request.section_id) 
+        insert_status = complete_registration(db_connection,registration, enrollment_request.course_code)
         if insert_status == QueryStatus.SUCCESS:
             return EnrollmentResponse(enrollment_date = datetime.utcnow(), enrollment_status = eligibility_status)
 
     except DBException as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)    
 
-        
 
 async def main():
     """Start the server."""
