@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from enum import Enum
 
 class AvailableClass(BaseModel):
-    course_code: int
+    course_code: str
     course_name: str
     department: str
     instructor_first_name: str
@@ -25,8 +25,8 @@ class EnrollmentResponse(BaseModel):
     enrollment_date: Optional[datetime] = None
 
 class EnrollmentRequest(BaseModel):
-    section_id: int
-    course_code: int
+    section_number: int
+    course_code: str
     student_id: int
 
 class RegistrationStatus(str, Enum):
@@ -36,9 +36,10 @@ class RegistrationStatus(str, Enum):
     DROPPED = "dropped"
 
 class Registration(BaseModel):
-    class_id: int
+    section_number: int #Section Number
     student_id: int
     enrollment_status: str
+    course_code: str
 
 class QueryStatus(str, Enum):
     SUCCESS = "success"

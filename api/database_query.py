@@ -43,7 +43,7 @@ def get_available_classes(db_connection: Connection, department_name: str) -> Li
     query = LIST_AVAILABLE_SQL_QUERY.format(department_name=department_name)
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
-    if rows.rowcount == 0:
+    if rows.arraysize == 0:
         raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given department_name:{department_name}')
     for row in rows:
         available_class = AvailableClass(course_name=row[0], 
@@ -67,7 +67,7 @@ def check_user_role(db_connection: Connection, student_id: int)-> Union[str, Non
             """
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
-    if rows.rowcount == 0:
+    if rows.arraysize == 0:
         raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given student_id:{student_id}')
     result = UserRole.NOT_FOUND
     for row in rows:
@@ -84,21 +84,21 @@ def count_waitlist_registration(db_connection: Connection, section_id: int)->int
     """
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
-    if rows.rowcount == 0:
+    if rows.arraysize == 0:
         raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given section_id:{section_id}')
     result = 0
     for row in rows:
         result = row[0]
     return result
 
-def check_enrollment_eligibility(db_connection: Connection, section_id: int, course_code: int)->str:
+def check_enrollment_eligibility(db_connection: Connection, section_number: int, course_code: str)->str:
     logger.info('Checking enrollment eligibility')
-    query = f"""SELECT CurrentEnrollment as 'current_enrollment', MaxEnrollment as 'max_enrollment', Waitlist as 'waitlist' FROM "Section" WHERE CourseCode = {course_code} and SectionNumber = {section_id}
+    query = f"""SELECT CurrentEnrollment as 'current_enrollment', MaxEnrollment as 'max_enrollment', Waitlist as 'waitlist' FROM "Section" WHERE CourseCode = '{course_code}' and SectionNumber = {section_number}
     """
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
-    if rows.rowcount == 0:
-        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given section_id:{section_id} and course_code:{course_code}')
+    if rows.arraysize == 0:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given section_number:{section_number} and course_code:{course_code}')
     query_result = {}
     for row in rows:
         query_result['current_enrollment'] = row[0]
@@ -109,19 +109,19 @@ def check_enrollment_eligibility(db_connection: Connection, section_id: int, cou
     if query_result['max_enrollment'] - query_result['current_enrollment'] >= 1:
         return RegistrationStatus.ENROLLED
     
-    waitlist_count = count_waitlist_registration(db_connection, section_id)
+    waitlist_count = count_waitlist_registration(db_connection, section_number)
     if query_result['waitlist'] > waitlist_count:
         return RegistrationStatus.WAITLISTED
     
     return RegistrationStatus.NOT_ELIGIBLE
 
-def complete_registration(db_connection: Connection, registration: Registration, course_code: int) -> str:
+def complete_registration(db_connection: Connection, registration: Registration) -> str:
     logger.info('Starting registration')
     insert_query = f"""
-    INSERT INTO RegistrationList (StudentID, ClassID, Status) VALUES ({registration.student_id}, {registration.class_id}, '{registration.enrollment_status}')
+    INSERT INTO RegistrationList (StudentID,CourseCode, SectionNumber, Status) VALUES ({registration.student_id},'{registration.course_code}', {registration.section_number}, '{registration.enrollment_status}')
     """
     update_query = f"""
-    UPDATE "Section" SET CurrentEnrollment = CurrentEnrollment + 1 WHERE SectionNumber = {registration.class_id} and CourseCode = {course_code}
+    UPDATE "Section" SET CurrentEnrollment = CurrentEnrollment + 1 WHERE SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}'
     """
     cursor = db_connection.cursor()
     cursor.execute("BEGIN")
