@@ -16,7 +16,7 @@ from .database_query import (
     check_user_role,
     complete_registration,
     get_available_classes,
-    update_student_registration_status
+    update_student_registration_status,
     addClass,
     check_class_exists,
     addSection,
@@ -33,7 +33,7 @@ from .models import (
     Registration,
     RegistrationStatus,
     UserRole,
-    DropCourseResponse
+    DropCourseResponse,
     AddClassResponse,
     AddClassRequest,
     DeleteSectionRequest,
