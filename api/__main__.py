@@ -130,11 +130,16 @@ async def update_registration_status(enrollment_request:EnrollmentRequest):
                                     student_id=enrollment_request.student_id,
                                     course_code=enrollment_request.course_code,
                                     enrollment_status='enrolled')
-        update_student_registration_status(db_connection,registration)
-        drop_course_response = DropCourseResponse(course_code=enrollment_request.course_code,
+        result = update_student_registration_status(db_connection,registration)
+        
+        if result == RegistrationStatus.DROPPED:
+            return DropCourseResponse(course_code=enrollment_request.course_code,
                                                    section_number=enrollment_request.section_number,
-                                                   status='successful')
-        return drop_course_response
+                                                   status='already dropped')
+                                                  
+        return DropCourseResponse(course_code=enrollment_request.course_code,
+                                                   section_number=enrollment_request.section_number,
+                                                   status='drop succefull')
     except DBException as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=err.error_detail)
 
