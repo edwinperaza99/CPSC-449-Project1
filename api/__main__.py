@@ -16,6 +16,12 @@ from .database_query import (
     check_user_role,
     complete_registration,
     get_available_classes,
+    addClass,
+    check_class_exists,
+    addSection,
+    check_section_exists,
+    deleteSection,
+    changeSectionInstructor
 )
 from .models import (
     AvailableClassResponse,
@@ -25,6 +31,12 @@ from .models import (
     Registration,
     RegistrationStatus,
     UserRole,
+    AddClassResponse,
+    AddClassRequest,
+    DeleteSectionRequest,
+    DeleteSectionResponse,
+    ChangeInstructorRequest,
+    ChangeInstructorResponse
 )
 
 app = FastAPI()
