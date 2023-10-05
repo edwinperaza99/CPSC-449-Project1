@@ -51,6 +51,11 @@ class UserRole(str, Enum):
     REGISTRAR = "registrar"
     NOT_FOUND = "not_found"
 
+class DropCourseResponse(BaseModel):
+    course_code: str
+    section_number: int
+    status: str
+    
 class AddClassRequest(BaseModel):
     course_code: str
     class_name: str
