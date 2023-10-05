@@ -91,8 +91,58 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
             return EnrollmentResponse(enrollment_date = datetime.utcnow(), enrollment_status = eligibility_status)
 
     except DBException as err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)    
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)
 
+##########   REGISTRAR ENDPOINTS     ######################
+@app.post(path="/classes", operation_id="add_class", response_model=AddClassResponse)
+async def add_class(addClass_request: AddClassRequest):
+    classExists = check_class_exists(db_connection, addClass_request.course_code)
+    if classExists:
+        try:
+            response = addSection(db_connection, addClass_request.section_number, addClass_request.course_code, addClass_request.instructor_id, addClass_request.max_enrollment)
+            if response == QueryStatus.SUCCESS:
+                return AddClassResponse(addClass_status = 'Successfully added new section')
+            else:
+                return AddClassResponse(addClass_status = 'Failed to add Section')
+        
+        except DBException as err:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)
+    else:
+        try:
+            addClassResponse = addClass(db_connection, addClass_request.course_code, addClass_request.class_name, addClass_request.department)
+            if addClassResponse == QueryStatus.SUCCESS:
+                addSectionResponse = addSection(db_connection, addClass_request.section_number, addClass_request.course_code, addClass_request.instructor_id, addClass_request.max_enrollment)
+                if addSectionResponse == QueryStatus.SUCCESS:
+                    return AddClassResponse(addClass_status = 'Successfully added Class & Section')
+                else:
+                    return AddClassResponse(addClass_status = 'Failed to add Class & Section')
+        
+        except DBException as err:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)
+
+@app.delete(path="/sections", operation_id="delete_section", response_model=DeleteSectionResponse)  
+async def delete_section(deleteSection_Request: DeleteSectionRequest):
+    sectionExists = check_section_exists(db_connection, deleteSection_Request.course_code, deleteSection_Request.section_number)
+    if not sectionExists:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'This section does not exist')
+    response = deleteSection(db_connection, deleteSection_Request.course_code, deleteSection_Request.section_number)
+    if response == QueryStatus.SUCCESS:
+        return DeleteSectionResponse(deleteSection_status = 'Successfully deleted section ' + str(deleteSection_Request.section_number) + ' of course ' + deleteSection_Request.course_code)
+    else:
+        return DeleteSectionResponse(deleteSection_status = 'Failed to delete section')
+    
+@app.post(path="/changeSectionInstructor", operation_id="change_section_instructor", response_model=ChangeInstructorResponse)
+async def change_section_instructor(changeInstructor_Request: ChangeInstructorRequest):
+    sectionExists = check_section_exists(db_connection, changeInstructor_Request.course_code, changeInstructor_Request.section_number)
+    if sectionExists == 0:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'This section does not exist')
+    response = changeSectionInstructor(db_connection, changeInstructor_Request.course_code, changeInstructor_Request.section_number, changeInstructor_Request.instructor_id)
+    if response == QueryStatus.SUCCESS:
+        return ChangeInstructorResponse(changeInstructor_status = 'Successfully changed instructor of section ' + str(changeInstructor_Request.section_number))
+    else:
+        return ChangeInstructorResponse(changeInstructor_status = 'Failed to change instructor')
+
+##########   REGISTRAR ENDPOINTS ENDS    ######################
 
 async def main():
     """Start the server."""
