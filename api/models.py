@@ -34,6 +34,7 @@ class RegistrationStatus(str, Enum):
     WAITLISTED = 'waitlisted'
     NOT_ELIGIBLE = 'not_eligible'
     DROPPED = "dropped"
+    ALREADY_ENROLLED = "already_enrolled"
 
 class Registration(BaseModel):
     section_number: int #Section Number
