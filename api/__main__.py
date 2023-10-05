@@ -23,7 +23,8 @@ from .database_query import (
     check_section_exists,
     deleteSection,
     changeSectionInstructor,
-    freezeEnrollment
+    freezeEnrollment,
+    check_status_query
 )
 from .models import (
     AvailableClassResponse,
@@ -96,7 +97,9 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
     role = check_user_role(db_connection, enrollment_request.student_id)
     if role == UserRole.NOT_FOUND or role != UserRole.STUDENT:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Enrollment not authorized for role:{role}')
-    
+    check_if_already_enrolled = check_status_query(db_connection, enrollment_request)
+    if check_if_already_enrolled :
+        return check_if_already_enrolled
     eligibility_status = check_enrollment_eligibility(db_connection, enrollment_request.section_number, enrollment_request.course_code)
     if eligibility_status == RegistrationStatus.NOT_ELIGIBLE:
         return EnrollmentResponse(enrollment_status = 'not eligible')
@@ -139,7 +142,7 @@ async def update_registration_status(enrollment_request:EnrollmentRequest):
                                                   
         return DropCourseResponse(course_code=enrollment_request.course_code,
                                                    section_number=enrollment_request.section_number,
-                                                   status='drop succefull')
+                                                   status='drop successfull')
     except DBException as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=err.error_detail)
 

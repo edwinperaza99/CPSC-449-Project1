@@ -6,6 +6,8 @@ from loguru import logger
 
 from .models import (
     AvailableClass,
+    EnrollmentRequest,
+    EnrollmentResponse,
     QueryStatus,
     Registration,
     RegistrationStatus,
@@ -93,6 +95,7 @@ def check_enrollment_eligibility(db_connection: Connection, section_number: int,
     logger.info('Checking enrollment eligibility')
     query = f"""SELECT CurrentEnrollment as 'current_enrollment', MaxEnrollment as 'max_enrollment', Waitlist as 'waitlist' FROM "Section" WHERE CourseCode = '{course_code}' and SectionNumber = {section_number}
     """
+
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
     if rows.arraysize == 0:
@@ -111,6 +114,22 @@ def check_enrollment_eligibility(db_connection: Connection, section_number: int,
         return RegistrationStatus.WAITLISTED
     
     return RegistrationStatus.NOT_ELIGIBLE
+
+def check_status_query(db_connection: Connection, enrollment_request: EnrollmentRequest) -> Union[EnrollmentResponse, None]:
+    check_status_query = f""" SELECT Status, EnrollmentDate FROM RegistrationList where StudentID = {enrollment_request.student_id} and SectionNumber = {enrollment_request.section_number} and CourseCode = '{enrollment_request.course_code}'"""
+    cursor = db_connection.cursor()
+    try:
+        rows =  cursor.execute(check_status_query)
+        if rows.arraysize == 0:
+            raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found')
+        row = rows.fetchone()
+        if row[0] == RegistrationStatus.ENROLLED:
+            return EnrollmentResponse(enrollment_status="already enrolled", enrollment_date=row[1])
+    except Exception as err:
+        logger.error(err)
+        raise DBException(error_detail = 'Fail to register')
+    return None
+
 
 def complete_registration(db_connection: Connection, registration: Registration) -> str:
     logger.info('Starting registration')
@@ -147,7 +166,7 @@ def update_student_registration_status(db_connection:Connection, registration: R
     logger.info('Upadting the registration status')
     check_status_query = f""" SELECT Status FROM RegistrationList where StudentID = {registration.student_id} and SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}'"""
     update_status_query = f""" UPDATE RegistrationList SET Status = 'dropped' where StudentID = {registration.student_id} and 
-                               SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}' and status = 'enrolled'"""
+                               SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}' and status = 'enrolled' """
     update_current_enrollment_query = f"""UPDATE SECTION set CurrentEnrollment = CurrentEnrollment -1 where SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}'"""
     update_waitlist_count_query = f"""UPDATE "Section" SET Waitlist = Waitlist - 1 WHERE SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}'"""
     cursor = db_connection.cursor()
@@ -159,10 +178,12 @@ def update_student_registration_status(db_connection:Connection, registration: R
         row = rows.fetchone()
         if row[0] == RegistrationStatus.DROPPED:
             return RegistrationStatus.DROPPED
-        elif row[0] == RegistrationStatus.ENROLLED:
-            cursor.execute(update_current_enrollment_query)
-        elif row[0] == RegistrationStatus.WAITLISTED:
-            cursor.execute(update_waitlist_count_query)
+        else:
+            cursor.execute(update_status_query)
+            if row[0] == RegistrationStatus.ENROLLED:
+                cursor.execute(update_current_enrollment_query)
+            elif row[0] == RegistrationStatus.WAITLISTED:
+                cursor.execute(update_waitlist_count_query)
         cursor.execute("COMMIT")
     except Exception as err:
         logger.error(err)
