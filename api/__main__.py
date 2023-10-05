@@ -21,7 +21,8 @@ from .database_query import (
     addSection,
     check_section_exists,
     deleteSection,
-    changeSectionInstructor
+    changeSectionInstructor,
+    freezeEnrollment
 )
 from .models import (
     AvailableClassResponse,
@@ -36,7 +37,9 @@ from .models import (
     DeleteSectionRequest,
     DeleteSectionResponse,
     ChangeInstructorRequest,
-    ChangeInstructorResponse
+    ChangeInstructorResponse,
+    FreezeEnrollmentRequest,
+    FreezeEnrollmentResponse
 )
 
 app = FastAPI()
@@ -153,8 +156,20 @@ async def change_section_instructor(changeInstructor_Request: ChangeInstructorRe
         return ChangeInstructorResponse(changeInstructor_status = 'Successfully changed instructor of section ' + str(changeInstructor_Request.section_number))
     else:
         return ChangeInstructorResponse(changeInstructor_status = 'Failed to change instructor')
+    
+@app.post(path="/freezeEnrollment", operation_id='freeze_enrollment', response_model=FreezeEnrollmentResponse)
+async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
+    sectionExists = check_section_exists(db_connection, freezeEnrollment_Request.course_code, freezeEnrollment_Request.section_number)
+    if sectionExists == 0:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'This section does not exist')
+    response = freezeEnrollment(db_connection, freezeEnrollment_Request.course_code, freezeEnrollment_Request.section_number)
+    if response == QueryStatus.SUCCESS:
+        return FreezeEnrollmentResponse(freezeEnrollment_status = 'Successfully freezed enrollment for section ' + str(freezeEnrollment_Request.section_number))
+    else:
+        return FreezeEnrollmentResponse(freezeEnrollment_status = 'Failed to freeze enrollment')
 
-##########   REGISTRAR ENDPOINTS ENDS    ######################
+##########   REGISTRAR ENDPOINTS ENDS    ######################    
+
 
 async def main():
     """Start the server."""
