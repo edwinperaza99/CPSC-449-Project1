@@ -139,6 +139,134 @@ def complete_registration(db_connection: Connection, registration: Registration)
 
     return QueryStatus.SUCCESS
     
+def check_class_exists(db_connection: Connection, course_code: str)-> bool:
+    logger.info('Checking if class exists')
+    result = False
+    query = f"""
+            SELECT CourseCode FROM Class where CourseCode = '{course_code}' 
+            """
+    cursor = db_connection.cursor()
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    if len(rows) > 0:
+        result = True
+    return result
 
+def check_section_exists(db_connection: Connection, course_code: str, section_number: int)-> bool:
+    logger.info('Checking if section exists')
+    result = False
+    query = f"""
+            SELECT SectionNumber FROM Section where CourseCode = '{course_code}' and SectionNumber = {section_number}
+            """
+    cursor = db_connection.cursor()
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    if len(rows) > 0:
+        result = True
+    return result
 
-        
+def addClass(db_connection: Connection, course_code, class_name, department) -> str:
+    logger.info('Starting to add class')
+    insert_query = f"""
+    INSERT INTO Class (CourseCode, Name, Department) VALUES ('{course_code}', '{class_name}', '{department}')
+    """
+
+    cursor = db_connection.cursor()
+
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(insert_query)
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to add class')
+    finally:
+        cursor.close()
+
+    return QueryStatus.SUCCESS
+
+def addSection(db_connection: Connection, section_number, course_code, instructor_id, max_enrollment) -> str:
+    logger.info('Starting to add section')
+    insert_query = f"""
+    INSERT INTO Section (SectionNumber, CourseCode, InstructorID, MaxEnrollment, CurrentEnrollment, Waitlist, SectionStatus) VALUES ({section_number}, '{course_code}', {instructor_id}, {max_enrollment}, 0, 0, 'open')
+    """
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(insert_query)
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to add section')
+    finally:
+        cursor.close()
+
+    return QueryStatus.SUCCESS
+
+def deleteSection(db_connection: Connection, course_code: str, section_number: int) -> str:
+    logger.info('Starting to delete section')
+    delete_query = f"""
+    DELETE FROM Section WHERE CourseCode = '{course_code}' and SectionNumber = {section_number}
+    """
+
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(delete_query)
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to delete section')
+    finally:
+        cursor.close()
+
+    return QueryStatus.SUCCESS
+
+def changeSectionInstructor(db_connection: Connection, course_code: str, section_number: int, instructor_id: int) -> str:
+    logger.info('Starting to change instructor for section ', str(section_number))
+    update_query = f"""
+    UPDATE Section SET InstructorID = {instructor_id} WHERE SectionNumber = {section_number} and CourseCode = '{course_code}'
+    """
+
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(update_query)
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to change instructor')
+    finally:
+        cursor.close()
+
+    return QueryStatus.SUCCESS
+
+def freezeEnrollment(db_connection: Connection, course_code: str, section_number: int) -> str:
+    logger.info('Starting to freeze enrollment for section ', str(section_number))
+    update_query = f"""
+    UPDATE Section SET SectionStatus = 'closed' WHERE SectionNumber = {section_number} and CourseCode = '{course_code}'
+    """
+
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(update_query)
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to freeze enrollment')
+    finally:
+        cursor.close()
+
+    return QueryStatus.SUCCESS
+
