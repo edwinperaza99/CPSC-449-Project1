@@ -16,6 +16,7 @@ from .database_query import (
     check_user_role,
     complete_registration,
     get_available_classes,
+    update_student_registration_status
 )
 from .models import (
     AvailableClassResponse,
@@ -25,6 +26,7 @@ from .models import (
     Registration,
     RegistrationStatus,
     UserRole,
+    DropCourseResponse
 )
 
 app = FastAPI()
@@ -74,7 +76,7 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
     Returns:
         EnrollmentResponse: EnrollmentResponse model
     """
-    
+
     role = check_user_role(db_connection, enrollment_request.student_id)
     if role == UserRole.NOT_FOUND or role != UserRole.STUDENT:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Enrollment not authorized for role:{role}')
@@ -92,6 +94,21 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
 
     except DBException as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)    
+
+@app.put(path = "/dropcourse", operation_id= "update_registration_status",response_model= DropCourseResponse)
+async def update_registration_status(enrollment_request:EnrollmentRequest):
+    try:
+        registration = Registration(section_number= enrollment_request.section_number,
+                                    student_id=enrollment_request.student_id,
+                                    course_code=enrollment_request.course_code,
+                                    enrollment_status='enrolled')
+        update_student_registration_status(db_connection,registration)
+        drop_course_response = DropCourseResponse(course_code=enrollment_request.course_code,
+                                                   section_number=enrollment_request.section_number,
+                                                   status='successful')
+        return drop_course_response
+    except DBException as err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=err.error_detail)                                             
 
 
 async def main():

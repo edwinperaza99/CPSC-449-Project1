@@ -138,6 +138,28 @@ def complete_registration(db_connection: Connection, registration: Registration)
         cursor.close()
 
     return QueryStatus.SUCCESS
+
+def update_student_registration_status(db_connection:Connection, registration: Registration)-> str:
+    logger.info('Upadting the registration status')
+    update_status_query = f""" UPDATE RegistrationList SET Status = 'dropped' where StudentID = {registration.student_id} and SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}' and status = 'enrolled'
+    """
+    update_current_enrollment = f"""UPDATE SECTION set CurrentEnrollment = CurrentEnrollment -1 where SectionNumber = {registration.section_number} and CourseCode = '{registration.course_code}'
+    """
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(update_status_query)
+        cursor.execute(update_current_enrollment)
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to drop the class')
+    finally:
+        cursor.close()
+    return QueryStatus.SUCCESS
+        
     
 
 
