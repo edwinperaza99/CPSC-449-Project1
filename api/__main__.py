@@ -63,6 +63,7 @@ async def check_db_health():
         return JSONResponse(content= {'status': 'not connected'}, status_code = status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
+##########   STUDENTS ENDPOINTS     ######################
 @app.get(path="/classes", operation_id="available_classes", response_model = AvailableClassResponse)
 async def available_classes(department_name: str):
     """API to fetch list of available classes for a given department name.
