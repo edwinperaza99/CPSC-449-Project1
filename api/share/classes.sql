@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS Section (
     CurrentEnrollment INTEGER NOT NULL,
     MaxEnrollment INTEGER NOT NULL,
     Waitlist INTEGER NOT NULL,
+    SectionStatus TEXT NOT NULL CHECK (SectionStatus IN ('open', 'closed')),
     PRIMARY KEY (SectionNumber, CourseCode),
     FOREIGN KEY (CourseCode) REFERENCES Class (CourseCode),
     FOREIGN KEY (InstructorID) REFERENCES Users (CWID)
@@ -83,13 +84,13 @@ INSERT INTO Users (Name, Middle, LastName, Role) VALUES
     ('Steven', NULL, 'Harris', 'student');
 
 -- Section Table
-INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist) VALUES
-    (1, 'CPSC-101', 1, 1, 30, 1),
-    (5, 'CPSC-101', 1, 1, 30, 0),
-    (1, 'CPSC-111', 2, 0, 35, 0),
-    (5, 'MATH-201', 3, 2, 25, 0),
-    (1, 'PHYS-301', 3, 1, 20, 0),
-    (3, 'PYS-101', 4, 2, 35, 0);
+INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist, SectionStatus) VALUES
+    (1, 'CPSC-101', 1, 1, 30, 1, 'open'),
+    (5, 'CPSC-101', 1, 1, 30, 0, 'open'),
+    (1, 'CPSC-111', 2, 0, 35, 0, 'open'),
+    (5, 'MATH-201', 3, 2, 25, 0, 'open'),
+    (1, 'PHYS-301', 3, 1, 20, 0, 'open'),
+    (3, 'PYS-101', 4, 2, 35, 0, 'open');
 
 -- RegistrationList Table
 INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALUES

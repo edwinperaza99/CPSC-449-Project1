@@ -56,3 +56,35 @@ class DropCourseResponse(BaseModel):
     section_number: int
     status: str
     
+class AddClassRequest(BaseModel):
+    course_code: str
+    class_name: str
+    department: str
+    section_number: int
+    instructor_id: int
+    max_enrollment: int
+
+class AddClassResponse(BaseModel):
+    addClass_status: str
+
+class DeleteSectionResponse(BaseModel):
+    deleteSection_status: str
+
+class DeleteSectionRequest(BaseModel):
+    course_code: str
+    section_number: int
+
+class ChangeInstructorResponse(BaseModel):
+    changeInstructor_status: str
+
+class ChangeInstructorRequest(BaseModel):
+    course_code: str
+    section_number: int
+    instructor_id: int
+
+class FreezeEnrollmentResponse(BaseModel):
+    freezeEnrollment_status: str
+
+class FreezeEnrollmentRequest(BaseModel):
+    course_code: str
+    section_number: int
