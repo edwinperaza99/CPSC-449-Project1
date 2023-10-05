@@ -111,6 +111,22 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
     except DBException as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= err.error_detail)
 
+
+@app.put(path = "/dropcourse", operation_id= "update_registration_status",response_model= DropCourseResponse)
+async def update_registration_status(enrollment_request:EnrollmentRequest):
+    try:
+        registration = Registration(section_number= enrollment_request.section_number,
+                                    student_id=enrollment_request.student_id,
+                                    course_code=enrollment_request.course_code,
+                                    enrollment_status='enrolled')
+        update_student_registration_status(db_connection,registration)
+        drop_course_response = DropCourseResponse(course_code=enrollment_request.course_code,
+                                                   section_number=enrollment_request.section_number,
+                                                   status='successful')
+        return drop_course_response
+    except DBException as err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=err.error_detail)
+
 ##########   REGISTRAR ENDPOINTS     ######################
 @app.post(path="/classes", operation_id="add_class", response_model=AddClassResponse)
 async def add_class(addClass_request: AddClassRequest):
@@ -172,21 +188,7 @@ async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
         return FreezeEnrollmentResponse(freezeEnrollment_status = 'Failed to freeze enrollment')
 
 ##########   REGISTRAR ENDPOINTS ENDS    ######################    
-
-@app.put(path = "/dropcourse", operation_id= "update_registration_status",response_model= DropCourseResponse)
-async def update_registration_status(enrollment_request:EnrollmentRequest):
-    try:
-        registration = Registration(section_number= enrollment_request.section_number,
-                                    student_id=enrollment_request.student_id,
-                                    course_code=enrollment_request.course_code,
-                                    enrollment_status='enrolled')
-        update_student_registration_status(db_connection,registration)
-        drop_course_response = DropCourseResponse(course_code=enrollment_request.course_code,
-                                                   section_number=enrollment_request.section_number,
-                                                   status='successful')
-        return drop_course_response
-    except DBException as err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=err.error_detail)                                             
+                                             
 
 
 async def main():
