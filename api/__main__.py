@@ -114,6 +114,17 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
 
 @app.put(path = "/dropcourse", operation_id= "update_registration_status",response_model= DropCourseResponse)
 async def update_registration_status(enrollment_request:EnrollmentRequest):
+    """API for students to drop a course
+
+    Args:
+        enrollment_request (EnrollmentRequest): Enrollment request
+
+    Raises:
+        HTTPException: Raise Exception if database fail to execute query
+
+    Returns:
+        DropCourseResponse : drop course response
+    """
     try:
         registration = Registration(section_number= enrollment_request.section_number,
                                     student_id=enrollment_request.student_id,
