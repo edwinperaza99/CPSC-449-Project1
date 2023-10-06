@@ -24,7 +24,9 @@ from .database_query import (
     deleteSection,
     changeSectionInstructor,
     freezeEnrollment,
-    check_status_query
+    check_status_query,
+    check_is_instructor,
+    get_enrolled_students
 )
 from .models import (
     AvailableClassResponse,
@@ -42,7 +44,9 @@ from .models import (
     ChangeInstructorRequest,
     ChangeInstructorResponse,
     FreezeEnrollmentRequest,
-    FreezeEnrollmentResponse
+    FreezeEnrollmentResponse,
+    EnrollmentListResponse,
+    EnrollmentListRequest
 )
 
 app = FastAPI()
@@ -207,8 +211,29 @@ async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
         return FreezeEnrollmentResponse(freezeEnrollment_status = 'Failed to freeze enrollment')
 
 ##########   REGISTRAR ENDPOINTS ENDS    ######################    
-                                             
 
+
+##########   INSTRUCTOR ENDPOINTS     ######################
+@app.get(path="/classEnrollment", operation_id="list_enrollment", response_model=EnrollmentListResponse)
+async def list_enrollment(EnrollmentList_Request: EnrollmentListRequest):
+    """API to fetch list of enrolled students for a given section.
+
+    Args:
+        instructor_id (int): Instructor id
+        course_code (str): Course code
+        section_number (int): Section number
+
+    Returns:
+        EnrollmentListResponse: EnrollmentListResponse model
+    """
+    role = check_is_instructor(db_connection, EnrollmentList_Request.instructor_id)
+    if role == UserRole.NOT_FOUND or role != UserRole.STUDENT:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Enrollment not authorized for role: {role}')
+    result = get_enrolled_students(db_connection, EnrollmentList_Request.instructor_id, EnrollmentList_Request.course_code, EnrollmentList_Request.section_number)
+    logger.info('Successfully executed list_enrollment')
+    return EnrollmentListResponse(enrolled_students = result)
+
+##########   INSTRUCTOR ENDPOINTS ENDS    ######################
 
 async def main():
     """Start the server."""

@@ -89,3 +89,15 @@ class FreezeEnrollmentResponse(BaseModel):
 class FreezeEnrollmentRequest(BaseModel):
     course_code: str
     section_number: int
+
+# instructor models 
+class EnrollmentListResponse(BaseModel):
+    student_cwid: int
+    student_first_name: str
+    student_last_name: str
+    course_code: str
+    section_number: int
+    class_name: str
+
+class EnrollmentListRequest(BaseModel):
+    instructor_id: int
