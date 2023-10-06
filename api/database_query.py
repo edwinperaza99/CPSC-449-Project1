@@ -513,3 +513,24 @@ def get_waitlist(db_connection: Connection, course_code: str, section_number: in
     logger.info(result)
     return result
 
+# TODO: FINISH THIS FUNCTION 
+# drop a student 
+def drop_student(db_connection: Connection, student_id: int, course_code: str, section_number: int) -> str:
+    logger.info('Dropping student')
+    query = """
+                UPDATE RegistrationList SET Status = 'dropped' WHERE StudentID = ? AND CourseCode = ? AND SectionNumber = ?
+    """
+    params = [student_id, course_code, section_number]
+    cursor = db_connection.cursor()
+    cursor.execute("BEGIN")
+    try:
+        cursor.execute(query, tuple(params))
+        cursor.execute("COMMIT")
+    except Exception as err:
+        logger.error(err)
+        cursor.execute("ROLLBACK")
+        logger.info('Rolling back transaction')
+        raise DBException(error_detail = 'Fail to drop student')
+    finally:
+        cursor.close()
+    return QueryStatus.SUCCESS

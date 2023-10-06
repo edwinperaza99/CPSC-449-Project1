@@ -265,6 +265,8 @@ async def list_enrollment(instructor_id: int, section_number: Optional[int] = No
 
     Args:
         instructor_id (int): Instructor id
+        section_number (Optional[int]): Section number (optional)
+        course_code (Optional[str]): Course code (optional)
 
     Returns:
         RecordsEnrollmentResponse: RecordsEnrollmentResponse model
@@ -295,6 +297,30 @@ async def list_dropped(instructor_id: int, section_number: Optional[int] = None,
     logger.info('Successfully executed list_dropped')
     return RecordsDroppedResponse(dropped_students = result)
 
+# TODO: finish this endpoint
+@app.post(path="dropStudent", operation_id="drop_student", response_model=droppedResponse)
+async def drop_student(instructor_id: int, student_id: int, section_number: int, course_code: str):
+    """API to drop a student from a section.
+
+    Args:
+        instructor_id (int): Instructor id
+        student_id (int): Student id
+        section_number (int): Section number
+        course_code (str): Course code
+
+    Returns:
+        droppedResponse: droppedResponse model
+    """
+    role = check_is_instructor(db_connection, instructor_id)
+    if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Drop Student not authorized for role: {role}')
+    try:    
+        result = drop_student(db_connection, student_id, section_number, course_code)
+        logger.info('Successfully executed drop_student')
+        return droppedResponse(drop_status = result)
+    except DBException as err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=err.error_detail)
+    
 ##########   INSTRUCTOR ENDPOINTS ENDS    ######################
 
 async def main():
