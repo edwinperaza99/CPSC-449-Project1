@@ -90,7 +90,7 @@ INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment,
     (1, 'CPSC-111', 2, 0, 35, 0, 'open'),
     (5, 'MATH-201', 3, 2, 25, 0, 'open'),
     (1, 'PHYS-301', 3, 1, 20, 0, 'open'),
-    (3, 'PYS-101', 4, 2, 35, 0, 'open');
+    (3, 'PYS-101', 2, 2, 35, 0, 'open');
 
 -- RegistrationList Table
 INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALUES
@@ -103,6 +103,9 @@ INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALU
     (7, 'PYS-101', 3, 'enrolled'),
     (8, 'PHYS-301', 1, 'enrolled'),
     (9, 'CPSC-101', 1, 'enrolled');
+    (11, 'PHYS-301', 1, 'dropped'),
+    (12, 'PHYS-301', 1, 'dropped'),
+    (13, 'PHYS-301', 1, 'dropped');
 
     
 COMMIT;

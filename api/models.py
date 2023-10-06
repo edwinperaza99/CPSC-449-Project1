@@ -90,6 +90,22 @@ class FreezeEnrollmentRequest(BaseModel):
     course_code: str
     section_number: int
 
+# instructor models 
+class EnrollmentListResponse(BaseModel):
+    student_cwid: int
+    student_first_name: str
+    student_last_name: str
+    course_code: str
+    section_number: int
+    class_name: str
+    status: str
+
+class RecordsEnrollmentResponse(BaseModel):
+    enrolled_students: List[EnrollmentListResponse]
+
+class RecordsDroppedResponse(BaseModel):
+    dropped_students: List[EnrollmentListResponse]
+
 class WaitlistPositionReq(BaseModel):
     # section_number: int
     # course_code: str
@@ -115,4 +131,5 @@ class WaitlistStudents(BaseModel):
 
 class ViewWaitlistRes(BaseModel):
     waitlisted_students: List[WaitlistStudents]
+
 

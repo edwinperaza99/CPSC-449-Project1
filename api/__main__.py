@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 import uvicorn
 from uvicorn.server import Server
+from typing import Optional
 
 from .database_query import (
     DBException,
@@ -25,6 +26,9 @@ from .database_query import (
     changeSectionInstructor,
     freezeEnrollment,
     check_status_query,
+    check_is_instructor,
+    get_enrolled_students,
+    get_dropped_students,
     get_waitlist_status,
     get_waitlist
 )
@@ -45,6 +49,9 @@ from .models import (
     ChangeInstructorResponse,
     FreezeEnrollmentRequest,
     FreezeEnrollmentResponse,
+    EnrollmentListResponse,
+    RecordsEnrollmentResponse,
+    RecordsDroppedResponse,
     WaitlistPositionReq,
     WaitlistPositionRes,
     ViewWaitlistReq,
@@ -215,6 +222,7 @@ async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
         return FreezeEnrollmentResponse(freezeEnrollment_status = 'Failed to freeze enrollment')
 
 ##########   REGISTRAR ENDPOINTS ENDS    ######################    
+
                                              
 ##########   WAITLIST ENDPOINTS     ######################
 # student viewing their position in the waitlist
@@ -250,6 +258,44 @@ async def view_waitlist(view_waitlist_req: ViewWaitlistReq):
 ##########   WAITLIST ENDPOINTS ENDS    ######################    
 
 
+##########   INSTRUCTOR ENDPOINTS     ######################
+@app.get(path="/classEnrollment", operation_id="list_enrollment", response_model=RecordsEnrollmentResponse)
+async def list_enrollment(instructor_id: int, section_number: Optional[int] = None, course_code: Optional[str] = None):
+    """API to fetch list of enrolled students for a given instructor.
+
+    Args:
+        instructor_id (int): Instructor id
+
+    Returns:
+        RecordsEnrollmentResponse: RecordsEnrollmentResponse model
+    """
+    role = check_is_instructor(db_connection, instructor_id)
+    if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Enrollment not authorized for role: {role}')
+    result = get_enrolled_students(db_connection, instructor_id, course_code, section_number)
+    logger.info('Successfully executed list_enrollment')
+    return RecordsEnrollmentResponse(enrolled_students = result)
+
+@app.get(path="/classDropped", operation_id="list_dropped", response_model=RecordsDroppedResponse)
+async def list_dropped(instructor_id: int, section_number: Optional[int] = None, course_code: Optional[str] = None):
+    """API to fetch list of dropped students for a given section.
+
+    Args:
+        instructor_id (int): Instructor id
+        section_number (Optional[int]): Section number (optional)
+        course_code (Optional[str]): Course code (optional)
+
+    Returns:
+        RecordsDroppedResponse: RecordsDroppedResponse model
+    """
+    role = check_is_instructor(db_connection, instructor_id)
+    if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Dropped not authorized for role: {role}')
+    result = get_dropped_students(db_connection, instructor_id, course_code, section_number)
+    logger.info('Successfully executed list_dropped')
+    return RecordsDroppedResponse(dropped_students = result)
+
+##########   INSTRUCTOR ENDPOINTS ENDS    ######################
 
 async def main():
     """Start the server."""

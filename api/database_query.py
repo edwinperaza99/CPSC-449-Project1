@@ -3,6 +3,7 @@ from typing import List, Union
 
 from fastapi import HTTPException, status
 from loguru import logger
+from typing import Optional
 
 from .models import (
     AvailableClass,
@@ -12,6 +13,7 @@ from .models import (
     Registration,
     RegistrationStatus,
     UserRole,
+    EnrollmentListResponse,
     WaitlistStudents,
     WaitlistPositionList
 )
@@ -210,6 +212,7 @@ def check_class_exists(db_connection: Connection, course_code: str)-> bool:
         result = True
     return result
 
+
 def check_section_exists(db_connection: Connection, course_code: str, section_number: int)-> bool:
     logger.info('Checking if section exists')
     result = False
@@ -222,6 +225,22 @@ def check_section_exists(db_connection: Connection, course_code: str, section_nu
     if len(rows) > 0:
         result = True
     return result
+
+
+def check_is_instructor(db_connection: Connection, instructor_id: int)-> Union[str, None]:
+    logger.info('Checking if user is instructor')
+    query = f"""
+            SELECT role FROM Users where CWID = {instructor_id}
+            """
+    cursor = db_connection.cursor()
+    rows =  cursor.execute(query)
+    if rows.arraysize == 0:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given student_id:{student_id}')
+    result = UserRole.NOT_FOUND
+    for row in rows:
+        result = row[0]
+    return result
+
 
 def addClass(db_connection: Connection, course_code, class_name, department) -> str:
     logger.info('Starting to add class')
@@ -328,6 +347,96 @@ def freezeEnrollment(db_connection: Connection, course_code: str, section_number
 
     return QueryStatus.SUCCESS
 
+
+def get_enrolled_students(db_connection: Connection, instructor_id: int, course_code: Optional[str] = None, section_number: Optional[int] = None) -> List[EnrollmentListResponse]:
+    logger.info('Getting enrolled students for instructor with CWID:')
+    query = """
+                SELECT
+                    Users.CWID AS StudentCWID,
+                    Users.Name AS StudentFirstName,
+                    Users.LastName AS StudentLastName,
+                    Class.CourseCode AS CourseCode,
+                    Section.SectionNumber AS SectionNumber,
+                    Class.Name AS ClassName,
+                    RegistrationList.Status AS Status
+                FROM
+                    RegistrationList
+                    JOIN Users ON RegistrationList.StudentID = Users.CWID
+                    JOIN Section ON RegistrationList.CourseCode = Section.CourseCode AND RegistrationList.SectionNumber = Section.SectionNumber
+                    JOIN Class ON Section.CourseCode = Class.CourseCode
+                WHERE
+                    Section.InstructorID = ?
+                    AND RegistrationList.Status = 'enrolled'
+            """
+    params = [instructor_id]
+    if course_code is not None:
+        query += " AND Section.CourseCode = ?"
+        params.append(course_code)
+    if section_number is not None:
+        query += " AND Section.SectionNumber = ?"
+        params.append(section_number)
+    else:
+        query += " ORDER BY Class.CourseCode, Section.SectionNumber, Users.LastName, Users.Name"
+    cur = db_connection.execute(query, tuple(params))
+    enrollment = cur.fetchall()
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Enrollment for instructor not found"
+        )
+    results = [{"student_cwid": row[0],
+                      "student_first_name": row[1],
+                      "student_last_name": row[2],
+                      "course_code": row[3],
+                      "section_number": row[4],
+                      "class_name": row[5],
+                      "status": row[6]} for row in enrollment]
+    return results
+
+# dropped students 
+def get_dropped_students(db_connection: Connection, instructor_id: int,course_code: Optional[str] = None, section_number: Optional[int] = None) -> List[EnrollmentListResponse]:
+    logger.info('Getting dropped students for instructor')
+    query = """
+                SELECT
+                    Users.CWID AS StudentCWID,
+                    Users.Name AS StudentFirstName,
+                    Users.LastName AS StudentLastName,
+                    Class.CourseCode AS CourseCode,
+                    Section.SectionNumber AS SectionNumber,
+                    Class.Name AS ClassName,
+                    RegistrationList.Status AS Status
+                FROM
+                    RegistrationList
+                    JOIN Users ON RegistrationList.StudentID = Users.CWID
+                    JOIN Section ON RegistrationList.CourseCode = Section.CourseCode AND RegistrationList.SectionNumber = Section.SectionNumber
+                    JOIN Class ON Section.CourseCode = Class.CourseCode
+                WHERE
+                    Section.InstructorID = ?
+                    AND RegistrationList.Status = 'dropped' 
+            """
+    params = [instructor_id]
+    if course_code is not None:
+        query += " AND Section.CourseCode = ?"
+        params.append(course_code)
+    if section_number is not None:
+        query += " AND Section.SectionNumber = ?"
+        params.append(section_number)
+    else:
+        query += " ORDER BY Class.CourseCode, Section.SectionNumber, Users.LastName, Users.Name"
+    cur = db_connection.execute(query, tuple(params))
+    enrollment = cur.fetchall()
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No students that dropped found for instructor"
+        )
+    results = [{"student_cwid": row[0],
+                      "student_first_name": row[1],
+                      "student_last_name": row[2],
+                      "course_code": row[3],
+                      "section_number": row[4],
+                      "class_name": row[5],
+                      "status": row[6]} for row in enrollment]
+    return results
+
 def get_waitlist_status(db_connection: Connection, student_id: int) -> str:
     logger.info('Checking waitlist position for student ', str(student_id))
     query = f"""
@@ -403,3 +512,4 @@ def get_waitlist(db_connection: Connection, course_code: str, section_number: in
         result.append(student)
     logger.info(result)
     return result
+
