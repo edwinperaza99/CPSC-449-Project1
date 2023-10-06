@@ -22,7 +22,9 @@ from .database_query import (
     check_section_exists,
     deleteSection,
     changeSectionInstructor,
-    freezeEnrollment
+    freezeEnrollment,
+    get_waitlist_status,
+    get_waitlist
 )
 from .models import (
     AvailableClassResponse,
@@ -39,7 +41,11 @@ from .models import (
     ChangeInstructorRequest,
     ChangeInstructorResponse,
     FreezeEnrollmentRequest,
-    FreezeEnrollmentResponse
+    FreezeEnrollmentResponse,
+    WaitlistPositionReq,
+    WaitlistPositionRes,
+    ViewWaitlistReq,
+    ViewWaitlistRes
 )
 
 app = FastAPI()
@@ -94,7 +100,7 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
     if role == UserRole.NOT_FOUND or role != UserRole.STUDENT:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Enrollment not authorized for role:{role}')
     
-    eligibility_status = check_enrollment_eligibility(db_connection, enrollment_request.section_number, enrollment_request.course_code)
+    eligibility_status = check_enrollment_eligibility(db_connection, enrollment_request.section_number, enrollment_request.course_code, enrollment_request.student_id)
     if eligibility_status == RegistrationStatus.NOT_ELIGIBLE:
         return EnrollmentResponse(enrollment_status = 'not eligible')
 
@@ -169,6 +175,54 @@ async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
         return FreezeEnrollmentResponse(freezeEnrollment_status = 'Failed to freeze enrollment')
 
 ##########   REGISTRAR ENDPOINTS ENDS    ######################    
+
+
+
+##########   WAITLIST ENDPOINTS     ######################
+
+# student enrolling in a waitlist handled in course_enrollment
+
+# student viewing their position in the waitlist
+@app.get(path="/waitlist_position", operation_id="waitlist_position", response_model = WaitlistPositionRes)
+async def waitlist_position(waitlist_request: WaitlistPositionReq):
+    """API to fetch the current position of a student in a waitlist.
+
+    Args:
+        section_number: int
+        course_code: str
+        student_id: int
+
+    Returns:
+        WaitlistPositionRes: WaitlistPositionRes model
+    """
+    result = get_waitlist_status(db_connection=db_connection, 
+                                 course_code=waitlist_request.course_code, 
+                                 section_number=waitlist_request.section_number, 
+                                 student_id=waitlist_request.student_id)
+    logger.info('Succesffuly executed the query')
+    return WaitlistPositionRes(waitlist_position = result)
+
+# student dropping themselves from the waitlist can be handled in drop classes
+
+# instructors viewing the current waitlist for a course and section
+@app.get(path="/view_waitlist", operation_id="view_waitlist", response_model = ViewWaitlistRes)
+async def view_waitlist(view_waitlist_req: ViewWaitlistReq):
+    """API to fetch the students in a waitlist.
+
+    Args:
+        section_number: int
+        course_code: str
+
+    Returns:
+        ViewWaitlistRes: ViewWaitlistRes model
+    """
+    result = get_waitlist(db_connection=db_connection, 
+                                 course_code=view_waitlist_req.course_code, 
+                                 section_number=view_waitlist_req.section_number)
+    logger.info('Succesffuly executed the query')
+    return WaitlistPositionRes(waitlist_position = result)
+
+##########   WAITLIST ENDPOINTS ENDS    ######################    
 
 
 async def main():

@@ -83,3 +83,20 @@ class FreezeEnrollmentResponse(BaseModel):
 class FreezeEnrollmentRequest(BaseModel):
     course_code: str
     section_number: int
+
+# to view position in waitlist 
+class WaitlistPositionReq(BaseModel):
+    section_number: int
+    course_code: str
+    student_id: int
+
+class WaitlistPositionRes(BaseModel):
+    waitlist_position: int
+
+# to view the waitlist
+class ViewWaitlistReq(BaseModel):
+    section_number: int
+    course_code: str
+
+class ViewWaitlistRes(BaseModel):
+    waitlist_students: List[str]

@@ -91,7 +91,7 @@ def count_waitlist_registration(db_connection: Connection, section_id: int)->int
         result = row[0]
     return result
 
-def check_enrollment_eligibility(db_connection: Connection, section_number: int, course_code: str)->str:
+def check_enrollment_eligibility(db_connection: Connection, section_number: int, course_code: str, student_id: int)->str:
     logger.info('Checking enrollment eligibility')
     query = f"""SELECT CurrentEnrollment as 'current_enrollment', MaxEnrollment as 'max_enrollment', Waitlist as 'waitlist' FROM "Section" WHERE CourseCode = '{course_code}' and SectionNumber = {section_number}
     """
@@ -111,8 +111,11 @@ def check_enrollment_eligibility(db_connection: Connection, section_number: int,
     
     waitlist_count = count_waitlist_registration(db_connection, section_number)
     if query_result['waitlist'] > waitlist_count:
+        # todo: check if the waitlist count is < 15
         return RegistrationStatus.WAITLISTED
-    
+
+        # todo: check if the student is registered in more than 3 waitlists
+
     return RegistrationStatus.NOT_ELIGIBLE
 
 def complete_registration(db_connection: Connection, registration: Registration) -> str:
@@ -270,3 +273,64 @@ def freezeEnrollment(db_connection: Connection, course_code: str, section_number
 
     return QueryStatus.SUCCESS
 
+# to get the current waitlist position for a student
+def get_waitlist_status(db_connection: Connection, course_code: str, section_number: int, student_id: int) -> str:
+    logger.info('Checking waitlist position for student ', str(student_id))
+    query = f"""
+        WITH WaitlistPosition AS (
+        SELECT
+            rl.StudentID,
+            rl.CourseCode,
+            rl.SectionNumber,
+            rl.Status,
+            ROW_NUMBER() OVER (PARTITION BY rl.CourseCode, rl.SectionNumber ORDER BY rl.EnrollmentDate) AS Position
+        FROM
+            RegistrationList rl
+        WHERE
+            rl.Status = 'waitlisted'
+        )
+        SELECT
+            wlp.Position
+        FROM
+            WaitlistPosition wlp
+        WHERE
+            wlp.StudentID = {student_id}
+    """
+    cursor = db_connection.cursor()
+    rows =  cursor.execute(query)
+    if rows.arraysize == 0:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found.')
+        # check if student has moved to enrolled?
+    result = 0
+    for row in rows:
+        result = row[0]
+    return result
+
+def get_waitlist(db_connection: Connection, course_code: str, section_number: int) -> list:
+    logger.info('fetching  the students on the waitlist ')
+    query = f"""
+        SELECT
+            r.StudentID,
+            u.Name AS StudentName,
+            r.EnrollmentDate,
+            r.Status
+        FROM
+            RegistrationList r
+        JOIN
+            Users u ON r.StudentID = u.CWID
+        WHERE
+            r.CourseCode = {course_code}
+            AND r.SectionNumber = {section_number}
+            AND r.Status = 'waitlisted'
+        ORDER BY
+            r.EnrollmentDate;
+    """
+    cursor = db_connection.cursor()
+    rows =  cursor.execute(query)
+    if rows.arraysize == 0:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Records not found.')
+        # todo: throw appropriate error messages
+    result = 0
+    for row in rows:
+        result = row[0]
+    return result
