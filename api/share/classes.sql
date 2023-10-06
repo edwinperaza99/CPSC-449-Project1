@@ -65,7 +65,7 @@ INSERT INTO Class (CourseCode, Name, Department) VALUES
     ('ECON-554', 'Microeconomics', 'Economy');
 
 
--- Users Table
+-- -- Users Table
 INSERT INTO Users (Name, Middle, LastName, Role) VALUES
     ('John', 'A.', 'Smith', 'instructor'),
     ('Jane', 'M.', 'Doe' ,'instructor'),
@@ -83,18 +83,18 @@ INSERT INTO Users (Name, Middle, LastName, Role) VALUES
     ('Laura', 'M.', 'Garcia', 'student'),
     ('Steven', NULL, 'Harris', 'student');
 
--- Section Table
+-- -- Section Table
 INSERT INTO Section (sectionNumber, CourseCode, InstructorID, CurrentEnrollment, MaxEnrollment, Waitlist, SectionStatus) VALUES
     (1, 'CPSC-101', 1, 1, 30, 1, 'open'),
     (5, 'CPSC-101', 1, 1, 30, 0, 'open'),
     (1, 'CPSC-111', 2, 0, 35, 0, 'open'),
     (5, 'MATH-201', 3, 2, 25, 0, 'open'),
     (1, 'PHYS-301', 3, 1, 20, 0, 'open'),
-    (3, 'PYS-101', 4, 2, 35, 0, 'open');
+    (3, 'PYS-101', 2, 2, 35, 0, 'open');
 
--- RegistrationList Table
+-- -- RegistrationList Table
 INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALUES
-    (5,'MATH-201', 5, 'enrolled'),
+    (5,'MATH-201', 5, 'dropped'),
     (5, 'PHYS-301',1, 'dropped'),
     (5, 'CPSC-101', 1, 'waitlisted'),
     (6, 'PYS-101', 3, 'enrolled'),
@@ -102,7 +102,12 @@ INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALU
     (7, 'MATH-201', 5, 'enrolled'),
     (7, 'PYS-101', 3, 'enrolled'),
     (8, 'PHYS-301', 1, 'enrolled'),
-    (9, 'CPSC-101', 1, 'enrolled');
+    (9, 'CPSC-101', 1, 'enrolled'),
+    (10, 'CPSC-101', 1, 'enrolled'),
+    (11, 'PHYS-301', 1, 'dropped'),
+    (12, 'PHYS-301', 1, 'dropped'),
+    (13, 'PHYS-301', 1, 'dropped');
+
 
     
 COMMIT;
