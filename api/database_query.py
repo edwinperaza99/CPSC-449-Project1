@@ -3,6 +3,7 @@ from typing import List, Union
 
 from fastapi import HTTPException, status
 from loguru import logger
+from typing import Optional
 
 from .models import (
     AvailableClass,
@@ -12,7 +13,7 @@ from .models import (
     Registration,
     RegistrationStatus,
     UserRole,
-    EnrollmentListResponse
+    EnrollmentListResponse,
 )
 
 LIST_AVAILABLE_SQL_QUERY = """
@@ -226,12 +227,9 @@ def check_section_exists(db_connection: Connection, course_code: str, section_nu
 
 def check_is_instructor(db_connection: Connection, instructor_id: int)-> Union[str, None]:
     logger.info('Checking if user is instructor')
-    query = (
-        """
-        SELECT role FROM Users where CWID = ?
-        """,
-        (instructor_id,),
-    )
+    query = f"""
+            SELECT role FROM Users where CWID = {instructor_id}
+            """
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
     if rows.arraysize == 0:
@@ -348,44 +346,91 @@ def freezeEnrollment(db_connection: Connection, course_code: str, section_number
     return QueryStatus.SUCCESS
 
 
-def get_enrolled_students(db_connection: Connection, instructor_id: int) -> List[EnrollmentListResponse]:
-    logger.info('Getting enrolled students for instructor with CWID:', str(instructor_id))
-    query = ("""
-        SELECT
-            Users.CWID AS StudentCWID,
-            Users.Name AS StudentFirstName,
-            Users.LastName AS StudentLastName,
-            Class.CourseCode AS CourseCode,
-            Section.SectionNumber AS SectionNumber,
-            Class.Name AS ClassName,
-            RegistrationList.Status AS Status
-        FROM
-            RegistrationList
-            JOIN Users ON RegistrationList.StudentID = Users.CWID
-            JOIN Section ON RegistrationList.CourseCode = Section.CourseCode AND RegistrationList.SectionNumber = Section.SectionNumber
-            JOIN Class ON Section.CourseCode = Class.CourseCode
-        WHERE
-            Section.InstructorID = ?
-            AND RegistrationList.Status = 'enrolled';
-        ORDER BY
-            Class.CourseCode,
-            Section.SectionNumber,
-            Users.LastName,
-            Users.Name;
-    """, (instructor_id,))
-    result = []
-    cursor = db_connection.cursor()
-    rows =  cursor.execute(query)
-    if not rows:
-        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'No enrollment found for instructor :{instructor_id}')
-    for row in rows:
-        enrollment = EnrollmentListResponse(student_cwid=row[0], 
-                                            student_first_name=row[1],
-                                            student_last_name=row[2],
-                                            course_code=row[3],
-                                            section_number=row[4],
-                                            class_name=row[5],
-                                            registration_status=row[6])
-        result.append(enrollment)
-    cursor.close()
-    return result
+def get_enrolled_students(db_connection: Connection, instructor_id: int, course_code: Optional[str] = None, section_number: Optional[int] = None) -> List[EnrollmentListResponse]:
+    logger.info('Getting enrolled students for instructor with CWID:')
+    query = """
+                SELECT
+                    Users.CWID AS StudentCWID,
+                    Users.Name AS StudentFirstName,
+                    Users.LastName AS StudentLastName,
+                    Class.CourseCode AS CourseCode,
+                    Section.SectionNumber AS SectionNumber,
+                    Class.Name AS ClassName,
+                    RegistrationList.Status AS Status
+                FROM
+                    RegistrationList
+                    JOIN Users ON RegistrationList.StudentID = Users.CWID
+                    JOIN Section ON RegistrationList.CourseCode = Section.CourseCode AND RegistrationList.SectionNumber = Section.SectionNumber
+                    JOIN Class ON Section.CourseCode = Class.CourseCode
+                WHERE
+                    Section.InstructorID = ?
+                    AND RegistrationList.Status = 'enrolled'
+            """
+    params = [instructor_id]
+    if course_code is not None:
+        query += " AND Section.CourseCode = ?"
+        params.append(course_code)
+    if section_number is not None:
+        query += " AND Section.SectionNumber = ?"
+        params.append(section_number)
+    else:
+        query += " ORDER BY Class.CourseCode, Section.SectionNumber, Users.LastName, Users.Name"
+    cur = db_connection.execute(query, tuple(params))
+    enrollment = cur.fetchall()
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Enrollment for instructor not found"
+        )
+    results = [{"student_cwid": row[0],
+                      "student_first_name": row[1],
+                      "student_last_name": row[2],
+                      "course_code": row[3],
+                      "section_number": row[4],
+                      "class_name": row[5],
+                      "status": row[6]} for row in enrollment]
+    return results
+
+# dropped students 
+def get_dropped_students(db_connection: Connection, instructor_id: int,course_code: Optional[str] = None, section_number: Optional[int] = None) -> List[EnrollmentListResponse]:
+    logger.info('Getting dropped students for instructor')
+    query = """
+                SELECT
+                    Users.CWID AS StudentCWID,
+                    Users.Name AS StudentFirstName,
+                    Users.LastName AS StudentLastName,
+                    Class.CourseCode AS CourseCode,
+                    Section.SectionNumber AS SectionNumber,
+                    Class.Name AS ClassName,
+                    RegistrationList.Status AS Status
+                FROM
+                    RegistrationList
+                    JOIN Users ON RegistrationList.StudentID = Users.CWID
+                    JOIN Section ON RegistrationList.CourseCode = Section.CourseCode AND RegistrationList.SectionNumber = Section.SectionNumber
+                    JOIN Class ON Section.CourseCode = Class.CourseCode
+                WHERE
+                    Section.InstructorID = ?
+                    AND RegistrationList.Status = 'dropped' 
+            """
+    params = [instructor_id]
+    if course_code is not None:
+        query += " AND Section.CourseCode = ?"
+        params.append(course_code)
+    if section_number is not None:
+        query += " AND Section.SectionNumber = ?"
+        params.append(section_number)
+    else:
+        query += " ORDER BY Class.CourseCode, Section.SectionNumber, Users.LastName, Users.Name"
+    cur = db_connection.execute(query, tuple(params))
+    enrollment = cur.fetchall()
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No students that dropped found for instructor"
+        )
+    results = [{"student_cwid": row[0],
+                      "student_first_name": row[1],
+                      "student_last_name": row[2],
+                      "course_code": row[3],
+                      "section_number": row[4],
+                      "class_name": row[5],
+                      "status": row[6]} for row in enrollment]
+    return results

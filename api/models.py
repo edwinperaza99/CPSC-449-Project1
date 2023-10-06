@@ -98,6 +98,10 @@ class EnrollmentListResponse(BaseModel):
     course_code: str
     section_number: int
     class_name: str
+    status: str
 
-class EnrollmentListRequest(BaseModel):
-    instructor_id: int
+class RecordsEnrollmentResponse(BaseModel):
+    enrolled_students: List[EnrollmentListResponse]
+
+class RecordsDroppedResponse(BaseModel):
+    dropped_students: List[EnrollmentListResponse]
