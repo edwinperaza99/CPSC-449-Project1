@@ -348,7 +348,7 @@ def freezeEnrollment(db_connection: Connection, course_code: str, section_number
 
     return QueryStatus.SUCCESS
 
-
+# enrolled students
 def get_enrolled_students(db_connection: Connection, instructor_id: int, course_code: Optional[str] = None, section_number: Optional[int] = None) -> List[EnrollmentListResponse]:
     logger.info('Getting enrolled students for instructor with CWID:')
     query = """
@@ -383,6 +383,51 @@ def get_enrolled_students(db_connection: Connection, instructor_id: int, course_
     if not enrollment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Enrollment for instructor not found"
+        )
+    results = [{"student_cwid": row[0],
+                      "student_first_name": row[1],
+                      "student_last_name": row[2],
+                      "course_code": row[3],
+                      "section_number": row[4],
+                      "class_name": row[5],
+                      "status": row[6]} for row in enrollment]
+    return results
+
+# waitlisted students
+def get_waitlisted_students(db_connection: Connection, instructor_id: int, course_code: Optional[str] = None, section_number: Optional[int] = None) -> List[EnrollmentListResponse]:
+    logger.info('Getting enrolled students for instructor with CWID:')
+    query = """
+                SELECT
+                    Users.CWID AS StudentCWID,
+                    Users.Name AS StudentFirstName,
+                    Users.LastName AS StudentLastName,
+                    Class.CourseCode AS CourseCode,
+                    Section.SectionNumber AS SectionNumber,
+                    Class.Name AS ClassName,
+                    RegistrationList.Status AS Status
+                FROM
+                    RegistrationList
+                    JOIN Users ON RegistrationList.StudentID = Users.CWID
+                    JOIN Section ON RegistrationList.CourseCode = Section.CourseCode AND RegistrationList.SectionNumber = Section.SectionNumber
+                    JOIN Class ON Section.CourseCode = Class.CourseCode
+                WHERE
+                    Section.InstructorID = ?
+                    AND RegistrationList.Status = 'waitlisted'
+            """
+    params = [instructor_id]
+    if course_code is not None:
+        query += " AND Section.CourseCode = ?"
+        params.append(course_code)
+    if section_number is not None:
+        query += " AND Section.SectionNumber = ?"
+        params.append(section_number)
+    else:
+        query += " ORDER BY Class.CourseCode, Section.SectionNumber, Users.LastName, Users.Name"
+    cur = db_connection.execute(query, tuple(params))
+    enrollment = cur.fetchall()
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Waitlist for instructor not found"
         )
     results = [{"student_cwid": row[0],
                       "student_first_name": row[1],

@@ -106,6 +106,9 @@ class RecordsEnrollmentResponse(BaseModel):
 class RecordsDroppedResponse(BaseModel):
     dropped_students: List[EnrollmentListResponse]
 
+class RecordsWaitlistResponse(BaseModel):
+    waitlisted_students: List[EnrollmentListResponse]
+
 class WaitlistPositionReq(BaseModel):
     # section_number: int
     # course_code: str

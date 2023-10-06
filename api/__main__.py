@@ -32,7 +32,8 @@ from .database_query import (
     get_waitlist_status,
     get_waitlist,
     check_is_enrolled,
-    check_is_instructor_of_section
+    check_is_instructor_of_section,
+    get_waitlisted_students
 )
 from .models import (
     AvailableClassResponse,
@@ -53,6 +54,7 @@ from .models import (
     FreezeEnrollmentResponse,
     EnrollmentListResponse,
     RecordsEnrollmentResponse,
+    RecordsWaitlistResponse,
     RecordsDroppedResponse,
     WaitlistPositionReq,
     WaitlistPositionRes,
@@ -282,6 +284,26 @@ async def list_enrollment(instructor_id: int, section_number: Optional[int] = No
     logger.info('Successfully executed list_enrollment')
     return RecordsEnrollmentResponse(enrolled_students = result)
 
+# TODO: test this endpoint 
+@app.get(path="/classEnrollment", operation_id="list_waitlist", response_model=RecordsWaitlistResponse)
+async def list_waitlist(instructor_id: int, section_number: Optional[int] = None, course_code: Optional[str] = None):
+    """API to fetch list of enrolled students for a given instructor.
+
+    Args:
+        instructor_id (int): Instructor id
+        section_number (Optional[int]): Section number (optional)
+        course_code (Optional[str]): Course code (optional)
+
+    Returns:
+        RecordsWaitlistResponse: RecordsWaitlistResponse model
+    """
+    role = check_is_instructor(db_connection, instructor_id)
+    if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Waitlist not authorized for role: {role}')
+    result = get_waitlisted_students(db_connection, instructor_id, course_code, section_number)
+    logger.info('Successfully executed list_waitlist')
+    return RecordsWaitlistResponse(waitlisted_students = result)
+
 @app.get(path="/classDropped", operation_id="list_dropped", response_model=RecordsDroppedResponse)
 async def list_dropped(instructor_id: int, section_number: Optional[int] = None, course_code: Optional[str] = None):
     """API to fetch list of dropped students for a given section.
@@ -300,7 +322,6 @@ async def list_dropped(instructor_id: int, section_number: Optional[int] = None,
     result = get_dropped_students(db_connection, instructor_id, course_code, section_number)
     logger.info('Successfully executed list_dropped')
     return RecordsDroppedResponse(dropped_students = result)
-
 
 # TODO: finish this endpoint
 @app.post(path="/dropStudent", operation_id="drop_student", response_model=DroppedResponse)
