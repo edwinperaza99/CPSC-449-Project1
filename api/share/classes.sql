@@ -102,7 +102,7 @@ INSERT INTO RegistrationList (StudentID, CourseCode, SectionNumber, Status) VALU
     (7, 'MATH-201', 5, 'enrolled'),
     (7, 'PYS-101', 3, 'enrolled'),
     (8, 'PHYS-301', 1, 'enrolled'),
-    (9, 'CPSC-101', 1, 'enrolled');
+    (9, 'CPSC-101', 1, 'enrolled'),
     (11, 'PHYS-301', 1, 'dropped'),
     (12, 'PHYS-301', 1, 'dropped'),
     (13, 'PHYS-301', 1, 'dropped');
