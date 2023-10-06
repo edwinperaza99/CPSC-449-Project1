@@ -28,7 +28,9 @@ from .database_query import (
     check_status_query,
     check_is_instructor,
     get_enrolled_students,
-    get_dropped_students
+    get_dropped_students,
+    get_waitlist_status,
+    get_waitlist
 )
 from .models import (
     AvailableClassResponse,
@@ -49,7 +51,13 @@ from .models import (
     FreezeEnrollmentResponse,
     EnrollmentListResponse,
     RecordsEnrollmentResponse,
-    RecordsDroppedResponse
+    RecordsDroppedResponse,
+    WaitlistPositionReq,
+    WaitlistPositionRes,
+    ViewWaitlistReq,
+    ViewWaitlistRes,
+    WaitlistStudents,
+    WaitlistPositionList
 )
 
 app = FastAPI()
@@ -214,6 +222,40 @@ async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
         return FreezeEnrollmentResponse(freezeEnrollment_status = 'Failed to freeze enrollment')
 
 ##########   REGISTRAR ENDPOINTS ENDS    ######################    
+
+                                             
+##########   WAITLIST ENDPOINTS     ######################
+# student viewing their position in the waitlist
+@app.get(path="/waitlist_position", operation_id="waitlist_position", response_model = WaitlistPositionRes)
+async def waitlist_position(waitlist_request: WaitlistPositionReq):
+    """API to fetch the current position of a student in a waitlist.
+    Args:
+        student_id: int
+    Returns:
+        WaitlistPositionRes: WaitlistPositionRes model
+    """
+    result = get_waitlist_status(db_connection=db_connection, 
+                                 student_id=waitlist_request.student_id)
+    logger.info('Succesffuly executed the query')
+    return WaitlistPositionRes(waitlist_positions = result)
+
+# instructors viewing the current waitlist for a course and section
+@app.get(path="/view_waitlist", operation_id="view_waitlist", response_model = ViewWaitlistRes)
+async def view_waitlist(view_waitlist_req: ViewWaitlistReq):
+    """API to fetch the students in a waitlist.
+    Args:
+        section_number: int
+        course_code: str
+    Returns:
+        ViewWaitlistRes: ViewWaitlistRes model
+    """
+    result = get_waitlist(db_connection=db_connection, 
+                                 course_code=view_waitlist_req.course_code, 
+                                 section_number=view_waitlist_req.section_number)
+    logger.info('Succesffuly executed the query')
+    return ViewWaitlistRes(waitlisted_students = result)
+
+##########   WAITLIST ENDPOINTS ENDS    ######################    
 
 
 ##########   INSTRUCTOR ENDPOINTS     ######################

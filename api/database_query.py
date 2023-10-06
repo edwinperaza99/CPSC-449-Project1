@@ -14,6 +14,8 @@ from .models import (
     RegistrationStatus,
     UserRole,
     EnrollmentListResponse,
+    WaitlistStudents,
+    WaitlistPositionList
 )
 
 LIST_AVAILABLE_SQL_QUERY = """
@@ -434,3 +436,80 @@ def get_dropped_students(db_connection: Connection, instructor_id: int,course_co
                       "class_name": row[5],
                       "status": row[6]} for row in enrollment]
     return results
+
+def get_waitlist_status(db_connection: Connection, student_id: int) -> str:
+    logger.info('Checking waitlist position for student ', str(student_id))
+    query = f"""
+        WITH WaitlistPosition AS (
+        SELECT
+            rl.StudentID,
+            rl.CourseCode,
+            rl.SectionNumber,
+            rl.Status,
+            ROW_NUMBER() OVER (PARTITION BY rl.CourseCode, rl.SectionNumber ORDER BY rl.EnrollmentDate) AS Position
+        FROM
+            RegistrationList rl
+        WHERE
+            rl.Status = 'waitlisted'
+        )
+        SELECT
+            wlp.Position,
+            wlp.CourseCode,
+            wlp.SectionNumber
+        FROM
+            WaitlistPosition wlp
+        WHERE
+            wlp.StudentID = {student_id}
+    """
+    cursor = db_connection.cursor()
+    rows =  cursor.execute(query)
+    if rows.arraysize == 0:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found.')
+    result = []
+    for row in rows:
+        logger.info(str(row))
+        waitlist = WaitlistPositionList(
+            waitlist_position = row[0],
+            section_number = row[2],
+            course_code = row[1]
+        )
+        result.append(waitlist)
+    print(result)
+    return result
+
+def get_waitlist(db_connection: Connection, course_code: str, section_number: int) -> list:
+    logger.info(f'fetching  the students on the waitlist with coursecode and section no {course_code}, {section_number}')
+    query = f"""
+        SELECT
+            r.StudentID,
+            u.Name AS StudentName,
+            r.EnrollmentDate,
+            r.Status
+        FROM
+            RegistrationList r
+        JOIN
+            Users u ON r.StudentID = u.CWID
+        WHERE
+            r.CourseCode = "{course_code}"
+            AND r.SectionNumber = {section_number}
+            AND r.Status = 'waitlisted'
+        ORDER BY
+            r.EnrollmentDate;
+    """
+    cursor = db_connection.cursor()
+    rows =  cursor.execute(query)
+    if rows.arraysize == 0:
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Records not found.')
+        # todo: throw appropriate error messages
+    result = []
+    for row in rows:
+        logger.info(str(row))
+        student = WaitlistStudents(
+            student_id = row[0],
+            student_name = row[1],
+            enrollment_date = row[2]
+        )
+        result.append(student)
+    logger.info(result)
+    return result
+
