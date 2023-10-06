@@ -236,7 +236,7 @@ def check_is_instructor(db_connection: Connection, instructor_id: int)-> Union[s
     cursor = db_connection.cursor()
     rows =  cursor.execute(query)
     if rows.arraysize == 0:
-        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given student_id:{student_id}')
+        raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST, detail= f'Record not found for given CWID: {instructor_id}')
     result = UserRole.NOT_FOUND
     for row in rows:
         result = row[0]
