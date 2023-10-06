@@ -15,7 +15,8 @@ from .models import (
     UserRole,
     EnrollmentListResponse,
     WaitlistStudents,
-    WaitlistPositionList
+    WaitlistPositionList,
+    DropStudentRequest
 )
 
 LIST_AVAILABLE_SQL_QUERY = """
@@ -513,18 +514,43 @@ def get_waitlist(db_connection: Connection, course_code: str, section_number: in
     logger.info(result)
     return result
 
-# TODO: FINISH THIS FUNCTION 
+# check if student is enrolled 
+def check_is_enrolled(db_connection, DropRequest) -> bool:
+    query = """SELECT Status FROM RegistrationList WHERE StudentID = ? AND CourseCode = ? AND SectionNumber = ?"""
+    cursor = db_connection.cursor()
+    cursor.execute(query, (DropRequest.student_id, DropRequest.course_code, DropRequest.section_number))
+    result = cursor.fetchone()
+    if result[0] == "enrolled" or result[0] == "waitlisted":
+        return True
+    else:
+        return False
+    
+# check if instructor is the instructor of the section 
+def check_is_instructor_of_section(db_connection, DropRequest) -> bool:
+    query = """SELECT InstructorID FROM Section WHERE CourseCode = ? AND SectionNumber = ?"""
+    cursor = db_connection.cursor()
+    cursor.execute(query, (DropRequest.course_code, DropRequest.section_number))
+    result = cursor.fetchone()
+    if result[0] == DropRequest.instructor_id:
+        return True
+    else:
+        return False
+
 # drop a student 
-def drop_student(db_connection: Connection, student_id: int, course_code: str, section_number: int) -> str:
+def drop_student(db_connection: Connection, DropRequest: DropStudentRequest) -> str:
     logger.info('Dropping student')
-    query = """
+    drop = """
                 UPDATE RegistrationList SET Status = 'dropped' WHERE StudentID = ? AND CourseCode = ? AND SectionNumber = ?
     """
-    params = [student_id, course_code, section_number]
+    update_enrollment = """
+                UPDATE Section SET CurrentEnrollment = CurrentEnrollment - 1 WHERE CourseCode = ? AND SectionNumber = ?
+    """
+    params = [DropRequest.student_id, DropRequest.course_code, DropRequest.section_number]
     cursor = db_connection.cursor()
     cursor.execute("BEGIN")
     try:
-        cursor.execute(query, tuple(params))
+        cursor.execute(drop, tuple(params))
+        cursor.execute(update_enrollment, (DropRequest.course_code, DropRequest.section_number))
         cursor.execute("COMMIT")
     except Exception as err:
         logger.error(err)
