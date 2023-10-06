@@ -220,8 +220,6 @@ async def list_enrollment(EnrollmentList_Request: EnrollmentListRequest):
 
     Args:
         instructor_id (int): Instructor id
-        course_code (str): Course code
-        section_number (int): Section number
 
     Returns:
         EnrollmentListResponse: EnrollmentListResponse model
