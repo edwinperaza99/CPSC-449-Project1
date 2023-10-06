@@ -217,9 +217,6 @@ async def freeze_enrollment(freezeEnrollment_Request: FreezeEnrollmentRequest):
 ##########   REGISTRAR ENDPOINTS ENDS    ######################    
                                              
 ##########   WAITLIST ENDPOINTS     ######################
-
-# student enrolling in a waitlist handled in course_enrollment
-
 # student viewing their position in the waitlist
 @app.get(path="/waitlist_position", operation_id="waitlist_position", response_model = WaitlistPositionRes)
 async def waitlist_position(waitlist_request: WaitlistPositionReq):
@@ -233,8 +230,6 @@ async def waitlist_position(waitlist_request: WaitlistPositionReq):
                                  student_id=waitlist_request.student_id)
     logger.info('Succesffuly executed the query')
     return WaitlistPositionRes(waitlist_positions = result)
-
-# student dropping themselves from the waitlist can be handled in drop classes
 
 # instructors viewing the current waitlist for a course and section
 @app.get(path="/view_waitlist", operation_id="view_waitlist", response_model = ViewWaitlistRes)
