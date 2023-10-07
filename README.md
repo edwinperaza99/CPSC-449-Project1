@@ -6,7 +6,7 @@
 - Divya Tanwar
 - Gaurav Warad
 - Abhinav Singh
--
+- Ryan Novoa
 -
 
 ## Project Description
