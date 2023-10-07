@@ -33,7 +33,8 @@ from .database_query import (
     get_waitlist,
     check_is_enrolled,
     check_is_instructor_of_section,
-    get_waitlisted_students
+    get_waitlisted_students,
+    drop_student
 )
 from .models import (
     AvailableClassResponse,
@@ -279,13 +280,14 @@ async def list_enrollment(instructor_id: int, section_number: Optional[int] = No
     """
     role = check_is_instructor(db_connection, instructor_id)
     if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        logger.info('List Class Enrollment not authorized for role')
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Enrollment not authorized for role: {role}')
     result = get_enrolled_students(db_connection, instructor_id, course_code, section_number)
     logger.info('Successfully executed list_enrollment')
     return RecordsEnrollmentResponse(enrolled_students = result)
 
 # TODO: test this endpoint 
-@app.get(path="/classEnrollment", operation_id="list_waitlist", response_model=RecordsWaitlistResponse)
+@app.get(path="/classWaitlist", operation_id="list_waitlist", response_model=RecordsWaitlistResponse)
 async def list_waitlist(instructor_id: int, section_number: Optional[int] = None, course_code: Optional[str] = None):
     """API to fetch list of enrolled students for a given instructor.
 
@@ -299,6 +301,7 @@ async def list_waitlist(instructor_id: int, section_number: Optional[int] = None
     """
     role = check_is_instructor(db_connection, instructor_id)
     if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        logger.info('List Class Waitlist not authorized for role')
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Waitlist not authorized for role: {role}')
     result = get_waitlisted_students(db_connection, instructor_id, course_code, section_number)
     logger.info('Successfully executed list_waitlist')
@@ -318,14 +321,14 @@ async def list_dropped(instructor_id: int, section_number: Optional[int] = None,
     """
     role = check_is_instructor(db_connection, instructor_id)
     if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        logger.info('List Class Dropped not authorized for role')
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'List Class Dropped not authorized for role: {role}')
     result = get_dropped_students(db_connection, instructor_id, course_code, section_number)
     logger.info('Successfully executed list_dropped')
     return RecordsDroppedResponse(dropped_students = result)
 
-# TODO: finish this endpoint
-@app.post(path="/dropStudent", operation_id="drop_student", response_model=DroppedResponse)
-async def drop_student(DropRequest: DropStudentRequest):
+@app.post(path="/dropStudent", operation_id="instructor_drop_student", response_model=DroppedResponse)
+async def instructor_drop_student(DropRequest: DropStudentRequest):
     """API to drop a student from a section.
 
     Args:
@@ -338,16 +341,19 @@ async def drop_student(DropRequest: DropStudentRequest):
         droppedResponse: droppedResponse model
     """
     role = check_is_instructor(db_connection, DropRequest.instructor_id)
-    # check if action is being perform by instructor 
+    # # check if action is being perform by instructor 
     if role == UserRole.NOT_FOUND or role != UserRole.INSTRUCTOR:
+        logger.info('Drop Student not authorized for role')
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Drop Student not authorized for role: {role}')
-    # check if instructor teaches the section 
+    # # check if instructor teaches the section 
     check_instructor = check_is_instructor_of_section(db_connection, DropRequest)
     if check_instructor == False:
+        logger.info('Instructor does not teach the section')
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Instructor does not teach the section')
-    # check if student is enrolled in the section or waitlisted
+    # # check if student is enrolled in the section or waitlisted
     check_status = check_is_enrolled(db_connection, DropRequest)
     if check_status == False:
+        logger.info('Student is not enrolled in the section')
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Student is not enrolled in the section')
     try:    
         result = drop_student(db_connection, DropRequest)

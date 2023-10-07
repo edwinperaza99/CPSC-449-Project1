@@ -565,7 +565,7 @@ def check_is_enrolled(db_connection, DropRequest) -> bool:
     cursor = db_connection.cursor()
     cursor.execute(query, (DropRequest.student_id, DropRequest.course_code, DropRequest.section_number))
     result = cursor.fetchone()
-    if result[0] == "enrolled" or result[0] == "waitlisted":
+    if result is not None and (result[0] == "enrolled" or result[0] == "waitlisted"):
         return True
     else:
         return False
@@ -576,7 +576,7 @@ def check_is_instructor_of_section(db_connection, DropRequest) -> bool:
     cursor = db_connection.cursor()
     cursor.execute(query, (DropRequest.course_code, DropRequest.section_number))
     result = cursor.fetchone()
-    if result[0] == DropRequest.instructor_id:
+    if result is not None and result[0] == DropRequest.instructor_id:
         return True
     else:
         return False
