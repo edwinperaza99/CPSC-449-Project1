@@ -7,9 +7,10 @@
 - Gaurav Warad
 - Abhinav Singh
 - Ryan Novoa
--
+- Chase Walsh
 
 ## Project Description
+This project is a RESTful API designed to retrieve different records from a university system.
 
 ## Run Instruction
 - Checkout the git repo
