@@ -30,7 +30,7 @@ def register(request: NewAccountRequest, db:sqlite3.Connection = Depends(get_db)
         return create_response(HTTPStatus.CREATED, f'{user["username"]} created!', user)
 
 @app.post("/login")
-def login(request:LoginRequest, db: sqlite3.Connection = Depends(get_db_reads)):
+def login(request:LoginRequest, db: sqlite3.Connection = Depends(get_db)):
     user = get_user_by_username(request.username, db, hide_password =False)
 
     if not user:
@@ -39,4 +39,4 @@ def login(request:LoginRequest, db: sqlite3.Connection = Depends(get_db_reads)):
     if not verify_password(request.password, user["password"]):
         raise_exception(HTTPStatus.UNAUTHORIZED, "Username or Password is not Valid")
 
-    return generate_claims(user["username"], user["user_id"])
+    return generate_claims(user["username"], user["user_id"], user["role"])

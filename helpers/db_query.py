@@ -14,7 +14,7 @@ def get_db():
         yield db
 
 def get_db_reads():
-    read_dbs = ["var/secondary_1/fuse/auth.db", "var/secondary_1/fuse/auth.db"]
+    read_dbs = ["var/primary/fuse/auth.db","var/secondary_1/fuse/auth.db", "var/secondary_1/fuse/auth.db"]
     target_db = choice(read_dbs)
     with contextlib.closing(sqlite3.connect(target_db)) as db:
         db.row_factory = sqlite3.Row
@@ -48,7 +48,7 @@ def get_user_by_username(username: str, db: sqlite3.Connection, hide_password: b
             "role":[get_user[0]["role"]]
         }
         if not hide_password:
-            user["passsword"] = get_user[0]["password"]
+            user["password"] = get_user[0]["password"]
 
         for x in range(1, len(get_user)):
             user["role"].append(get_user[x]["role"])
