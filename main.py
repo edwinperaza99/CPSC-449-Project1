@@ -5,6 +5,7 @@ from http import HTTPStatus
 from models import *
 from helpers.db_query import *
 from helpers.response import *
+from helpers.auth import generate_claims, verify_password
 import sqlite3
 
 app = FastAPI()

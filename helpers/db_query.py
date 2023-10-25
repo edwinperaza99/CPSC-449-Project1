@@ -3,9 +3,23 @@ import contextlib
 from http import HTTPStatus
 from helpers.constants import ROLE
 from helpers.response import raise_exception
+from helpers.auth import hash_password
 from random import choice
 from models import *
 from helpers.response import *
+
+def get_db():
+    with contextlib.closing(sqlite3.connect("var/primary/fuse/auth.db")) as db:
+        db.row_factory = sqlite3.Row
+        yield db
+
+def get_db_reads():
+    read_dbs = ["var/secondary_1/fuse/auth.db", "var/secondary_1/fuse/auth.db"]
+    target_db = choice(read_dbs)
+    with contextlib.closing(sqlite3.connect(target_db)) as db:
+        db.row_factory = sqlite3.Row
+        yield db
+
 
 def get_user_by_username(username: str, db: sqlite3.Connection, hide_password: bool = True):
     sql = """
