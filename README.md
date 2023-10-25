@@ -8,6 +8,7 @@
 - Abhinav Singh
 - Ryan Novoa
 - Chase Walsh
+- Mc Gabriel Fernandez
 
 ## Project Description
 This project is a RESTful API designed to retrieve different records from a university system.
