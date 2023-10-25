@@ -1,0 +1,1 @@
+sqlite3 ./var/primary/fuse/auth.db < ./seed/seed.sql

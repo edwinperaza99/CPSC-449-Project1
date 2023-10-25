@@ -1,0 +1,4 @@
+uvicorn==0.22.0
+pydantic
+fastapi
+loguru
