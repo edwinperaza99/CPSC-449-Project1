@@ -32,9 +32,9 @@ def get_user_by_username(username: str, db: sqlite3.Connection, hide_password: b
     role.name as role
     FROM user
     LEFT JOIN user_role
-    ON user_role.user_id = user_id
+    ON user_role.user_id = user.id
     LEFT JOIN role
-    ON user_role.user_id.role_id = role_id
+    ON user_role.role_id = role.id
     WHERE user.username = ?
     """
     get_user = db.execute(sql, [username]).fetchall()
