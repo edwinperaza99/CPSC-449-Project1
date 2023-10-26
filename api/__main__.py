@@ -119,9 +119,6 @@ async def course_enrollment(enrollment_request: EnrollmentRequest):
     role = check_user_role(db_connection, enrollment_request.student_id)
     if role == UserRole.NOT_FOUND or role != UserRole.STUDENT:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail= f'Enrollment not authorized for role:{role}')
-    check_if_already_enrolled = check_status_query(db_connection, enrollment_request)
-    if check_if_already_enrolled :
-        return check_if_already_enrolled
     eligibility_status = check_enrollment_eligibility(db_connection, enrollment_request.section_number, enrollment_request.course_code)
     if eligibility_status == RegistrationStatus.NOT_ELIGIBLE:
         return EnrollmentResponse(enrollment_status = 'not eligible')
